@@ -34,7 +34,7 @@ public class BoardManager : MonoBehaviour {
 
     void setupMaze()
     {
-        MazeBuilder mazeBuilder = new MazeBuilder(this.board, 5, 5);
+        MazeBuilder mazeBuilder = new MazeBuilder(this.board, this.tiles, 0, 0);
     }
 
 	// Update is called once per frame
