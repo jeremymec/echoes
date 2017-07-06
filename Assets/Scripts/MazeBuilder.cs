@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class MazeBuilder : ScriptableObject {
 
     enum Direction { UP, DOWN, LEFT, RIGHT}
+
+    private static System.Random rng = new System.Random();
 
     // Array of tiles types, passed in by BoardManager as opposed to dragged in using unity
     GameObject[] tiles;
@@ -46,6 +49,9 @@ public class MazeBuilder : ScriptableObject {
     /// </summary>
     void makePath(GameObject target)
     {
+        TileScript debugScript = target.GetComponent<TileScript>();
+        Debug.Log("Making path out of tile with tag " + target.tag + " with position X: " + debugScript.arrayPos[0] + " Y: " + debugScript.arrayPos[1]);
+
         // Gets coords of target to be replaced
         int[] targetPos = target.GetComponent<TileScript>().arrayPos;
 
@@ -70,7 +76,7 @@ public class MazeBuilder : ScriptableObject {
         Debug.Log("Now checking Tile of type " + current.tag + "with position in array X: " + ts.arrayPos[0] + " Y: " + ts.arrayPos[1]);
 
         // Check if maze can be continued in EACH direction
-        foreach (Direction dir in Enum.GetValues(typeof(Direction)))
+        foreach (Direction dir in getRandomDirections())
         {
 
             // Stores whether the first AND second tile in the specified direction is empty 
@@ -79,11 +85,14 @@ public class MazeBuilder : ScriptableObject {
 
             // If both are empty, the maze can continue building
             if (lookAheadOne && lookAheadTwo){
-                makePath(move(current, dir, 1));
                 stack.Push(current);
 
                 GameObject nextTile = move(current, dir, 1);
-                check(nextTile, stack);
+                makePath(nextTile);
+
+                GameObject targetTile = move(current, dir, 2);
+                makePath(targetTile);
+                check(targetTile, stack);
             }
         }
 
@@ -92,6 +101,24 @@ public class MazeBuilder : ScriptableObject {
         {
             check(stack.Pop(), stack);
         }
+    }
+
+    List<Direction> getRandomDirections()
+    {
+        
+        List<Direction> directionList = Enum.GetValues(typeof(Direction)).Cast<Direction>().ToList();
+
+        int n = directionList.Count;
+        while (n > 1)
+        {
+            n--;
+            int k = rng.Next(n + 1);
+            Direction value = directionList[k];
+            directionList[k] = directionList[n];
+            directionList[n] = value;
+        }
+
+        return directionList;
     }
 
     /// <summary>
