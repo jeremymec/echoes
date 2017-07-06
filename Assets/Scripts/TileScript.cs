@@ -9,7 +9,7 @@ public class TileScript : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		
+        this.room = null;
 	}
 
     public Room getRoom()

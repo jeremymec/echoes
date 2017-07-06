@@ -50,8 +50,6 @@ public class MazeBuilder : ScriptableObject {
     /// </summary>
     void makePath(GameObject target)
     {
-        TileScript debugScript = target.GetComponent<TileScript>();
-        // Debug.Log("Making path out of tile with tag " + target.tag + " with position X: " + debugScript.arrayPos[0] + " Y: " + debugScript.arrayPos[1]);
 
         // Gets coords of target to be replaced
         int[] targetPos = target.GetComponent<TileScript>().arrayPos;

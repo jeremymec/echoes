@@ -16,5 +16,11 @@ public class Room : ScriptableObject {
 
     }
 
-
+    public void init(GameObject[,] board, int[] bottomLeft, int sizeX, int sizeY)
+    {
+        this.board = board;
+        this.bottomLeft = bottomLeft;
+        this.sizeX = sizeX;
+        this.sizeY = sizeY;
+    }
 }
