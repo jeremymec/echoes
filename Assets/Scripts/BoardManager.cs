@@ -42,7 +42,7 @@ public class BoardManager : MonoBehaviour {
 
         }
 
-        placeRooms(10);
+        placeRooms(500);
 
         // Debug.Log("Time before setting up maze, " + GameManager.watch.ElapsedMilliseconds);
         // setupMaze();
@@ -56,14 +56,12 @@ public class BoardManager : MonoBehaviour {
             int sizeX = Random.Range(3, 8);
             int sizeY = Random.Range(3, 8);
 
-            int debug0 = board.GetLength(0); // DEBUG
-            int debug1 = board.GetLength(1); // DEBUG
-
             int startX = Random.Range(0, board.GetLength(0) - (sizeX + 1));
-            int startY = Random.Range(0, board.GetLength(1) - (sizeX + 1));
+            int startY = Random.Range(0, board.GetLength(1) - (sizeY + 1));
 
             int[] bottomLeft = { startX, startY };
 
+            Debug.Log("MAKING ROOM, ATTEMPT #" + i + "WITH BOTTOMLEFT X: " + startX + " Y: " + startY);
             createRoom(bottomLeft, sizeX, sizeY);
         }
     }
@@ -71,29 +69,37 @@ public class BoardManager : MonoBehaviour {
     bool createRoom(int[] bottomLeft, int sizeX, int sizeY)
     {
 
-        for (int y = bottomLeft[1]; y < sizeY + (bottomLeft[1] - 1); y++)
+        for (int y = bottomLeft[1] - 1; y < sizeY + bottomLeft[1] + 1; y++)
         {
-            for (int x = bottomLeft[0]; y < sizeX + (bottomLeft[0] - 1); x++)
+            for (int x = bottomLeft[0] - 1; x < sizeX + bottomLeft[0] + 1; x++)
             {
-                Debug.Log("About to access square at X: " + x + " Y: " + y);
-                if (this.board[x, y].GetComponent<TileScript>().getRoom() != null)
+                // Debug.Log("About to access square at X: " + x + " Y: " + y);
+                try
+                {
+                    if (this.board[x, y].GetComponent<TileScript>().getRoom() != null)
+                    {
+                        return false;
+                    }
+                } catch (System.IndexOutOfRangeException e)
                 {
                     return false;
                 }
+
             }
         }
 
         Room room = ScriptableObject.CreateInstance<Room>();
         room.init(this.board, bottomLeft, sizeX, sizeY);
 
-        for (int y = bottomLeft[1]; y < sizeY; y++)
+        for (int y = bottomLeft[1]; y < sizeY + bottomLeft[1]; y++)
         {
-            for (int x = bottomLeft[0]; y < sizeX; x++)
+            for (int x = bottomLeft[0]; x < sizeX + bottomLeft[0]; x++)
             {
                 GameObject oldTile = this.board[x, y];
                 int[] targetPos = oldTile.GetComponent<TileScript>().arrayPos;
 
-                GameObject tile = Instantiate(tiles[1], new Vector3(targetPos[1], targetPos[1], 0), Quaternion.identity) as GameObject;
+                GameObject tile = Instantiate(tiles[1], new Vector3(targetPos[0], targetPos[1], 0), Quaternion.identity) as GameObject;
+                // Debug.Log("Making new Tile at X: " + targetPos[0] + " Y: " + targetPos[1]);
                 tile.GetComponent<TileScript>().setRoom(room);
                 this.board[targetPos[0], targetPos[1]] = tile;
 
