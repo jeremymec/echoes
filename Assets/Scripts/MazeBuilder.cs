@@ -19,14 +19,26 @@ public class MazeBuilder : ScriptableObject {
     // Empty stack utilized by the DFS algorithm
     Stack<GameObject> stack;
 
-	public MazeBuilder(GameObject[,] board, GameObject[] tiles, int startX, int startY)
+	public MazeBuilder()
+    {
+
+    }
+
+    public void init(GameObject[,] board, GameObject[] tiles, int startX, int startY)
     {
         this.board = board;
         this.tiles = tiles;
         this.stack = new Stack<GameObject>();
         this.start = board[startX, startY];
+        makePath(this.start);
 
-        check(this.start, this.stack); // Debugging
+        check(this.start, this.stack);
+    }
+    
+    //TODO: REMOVE THIS, DEBUGGING ONLY
+    public void test()
+    {
+        
     }
 
     /// <summary>
@@ -38,7 +50,8 @@ public class MazeBuilder : ScriptableObject {
         int[] targetPos = target.GetComponent<TileScript>().arrayPos;
 
         // Creates new floor tile and replaces the array reference to the empty tile with this new tile
-        GameObject tile = Instantiate(tiles[1], new Vector3(targetPos[0], targetPos[0], 0), Quaternion.identity) as GameObject;
+        GameObject tile = Instantiate(tiles[1], new Vector3(targetPos[0], targetPos[1], 0), Quaternion.identity) as GameObject;
+        tile.GetComponent<TileScript>().arrayPos = targetPos;
         this.board[targetPos[0], targetPos[1]] = tile;
 
         // Removes the target from the game board
@@ -52,12 +65,13 @@ public class MazeBuilder : ScriptableObject {
     /// <param name="stack">The stack, which is needed to step back through maze</param>
     void check(GameObject current, Stack<GameObject> stack)
     {
+
+        TileScript ts = current.GetComponent("TileScript") as TileScript;
+        Debug.Log("Now checking Tile of type " + current.tag + "with position in array X: " + ts.arrayPos[0] + " Y: " + ts.arrayPos[1]);
+
         // Check if maze can be continued in EACH direction
         foreach (Direction dir in Enum.GetValues(typeof(Direction)))
         {
-
-            GameObject testTile = move(current, dir, 1); // Debugging
-            bool test = isEmpty(testTile); // Debugging
 
             // Stores whether the first AND second tile in the specified direction is empty 
             bool lookAheadOne = isEmpty(move(current, dir, 1));
@@ -65,14 +79,16 @@ public class MazeBuilder : ScriptableObject {
 
             // If both are empty, the maze can continue building
             if (lookAheadOne && lookAheadTwo){
-                makePath(current);
+                makePath(move(current, dir, 1));
                 stack.Push(current);
-                check(move(current, dir, 1), stack);
+
+                GameObject nextTile = move(current, dir, 1);
+                check(nextTile, stack);
             }
         }
 
         // If dead end is reached, step back using the stack
-        if (stack.Peek() != null)
+        if (stack.Count != 0)
         {
             check(stack.Pop(), stack);
         }
@@ -134,7 +150,7 @@ public class MazeBuilder : ScriptableObject {
         try
         {
             // Gets the cell at the array position corresponding to the movement 
-            int[] pos = cell.GetComponent<TileScript>().arrayPos;
+            int[] pos = (cell.GetComponent("TileScript") as TileScript).arrayPos;
             target = board[pos[0] + deltaX, (pos[1] + deltaY)];
         }
         catch (IndexOutOfRangeException e)

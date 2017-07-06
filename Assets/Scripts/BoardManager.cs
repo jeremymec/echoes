@@ -14,6 +14,11 @@ public class BoardManager : MonoBehaviour {
         createBoard(width, height);
 	}
 
+    /// <summary>
+    /// Initializes and fills 2D array of GameObjects with newly Instantiated empty tiles (which are also displayed on the game screen)
+    /// </summary>
+    /// <param name="width">Width of Board</param>
+    /// <param name="height">Height of Board</param>
     void createBoard(int width, int height)
     {
         // Initializes array with GameObjects, that will be filled with Tiles
@@ -41,9 +46,10 @@ public class BoardManager : MonoBehaviour {
     }
 
     void setupMaze()
-    {   
+    {
         // Creates a new MazeBuilder object for the newly created board fill of empty tiles
-        MazeBuilder mazeBuilder = new MazeBuilder(this.board, this.tiles, 0, 0);
+        MazeBuilder mazeBuilder = ScriptableObject.CreateInstance<MazeBuilder>();
+        mazeBuilder.init(this.board, this.tiles, 0, 0);
     }
 
 	// Update is called once per frame
