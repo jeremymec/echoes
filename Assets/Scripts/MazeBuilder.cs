@@ -36,6 +36,7 @@ public class MazeBuilder : ScriptableObject {
         makePath(this.start);
 
         check(this.start, this.stack);
+        Debug.Log("Time after setting up maze, " + GameManager.watch.ElapsedMilliseconds);
     }
     
     //TODO: REMOVE THIS, DEBUGGING ONLY
@@ -50,7 +51,7 @@ public class MazeBuilder : ScriptableObject {
     void makePath(GameObject target)
     {
         TileScript debugScript = target.GetComponent<TileScript>();
-        Debug.Log("Making path out of tile with tag " + target.tag + " with position X: " + debugScript.arrayPos[0] + " Y: " + debugScript.arrayPos[1]);
+        // Debug.Log("Making path out of tile with tag " + target.tag + " with position X: " + debugScript.arrayPos[0] + " Y: " + debugScript.arrayPos[1]);
 
         // Gets coords of target to be replaced
         int[] targetPos = target.GetComponent<TileScript>().arrayPos;
@@ -73,7 +74,7 @@ public class MazeBuilder : ScriptableObject {
     {
 
         TileScript ts = current.GetComponent("TileScript") as TileScript;
-        Debug.Log("Now checking Tile of type " + current.tag + "with position in array X: " + ts.arrayPos[0] + " Y: " + ts.arrayPos[1]);
+        // Debug.Log("Now checking Tile of type " + current.tag + "with position in array X: " + ts.arrayPos[0] + " Y: " + ts.arrayPos[1]);
 
         // Check if maze can be continued in EACH direction
         foreach (Direction dir in getRandomDirections())

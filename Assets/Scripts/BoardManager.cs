@@ -11,6 +11,7 @@ public class BoardManager : MonoBehaviour {
     public GameObject[,] board;
 
 	public void setupScene (int width, int height) {
+        Debug.Log("Time at beginning of setupScene, " + GameManager.watch.ElapsedMilliseconds);
         createBoard(width, height);
 	}
 
@@ -41,6 +42,7 @@ public class BoardManager : MonoBehaviour {
 
         }
 
+        Debug.Log("Time before setting up maze, " + GameManager.watch.ElapsedMilliseconds);
         setupMaze();
 
     }

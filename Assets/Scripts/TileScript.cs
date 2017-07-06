@@ -5,28 +5,28 @@ using UnityEngine;
 public class TileScript : MonoBehaviour {
 
     public int[] arrayPos;
-    bool visited;
+    Room room;
 
 	// Use this for initialization
 	void Start () {
 		
 	}
 
+    public Room getRoom()
+    {
+        return this.room;
+    }
+
+    public void setRoom(Room room)
+    {
+        this.room = room;
+    }
+
     void insert(int[] pos)
     {
         this.arrayPos = pos;
     }
 
-    public bool isVisited()
-    {
-        return this.visited;
-    }
-
-    public void vist()
-    {
-        this.visited = true;
-    }
-	
 	// Update is called once per frame
 	void Update () {
 		
