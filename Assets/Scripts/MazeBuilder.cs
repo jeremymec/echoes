@@ -6,8 +6,6 @@ using UnityEngine;
 
 public class MazeBuilder : ScriptableObject {
 
-    enum Direction { UP, DOWN, LEFT, RIGHT}
-
     private static System.Random rng = new System.Random();
 
     // Array of tiles types, passed in by BoardManager as opposed to dragged in using unity
@@ -38,7 +36,7 @@ public class MazeBuilder : ScriptableObject {
         this.start = board[startX, startY];
         this.region = region;
 
-        makePath(this.start);
+        // makePath(this.start);
 
         check(this.start, this.stack);
         Debug.Log("Time after setting up maze, " + GameManager.watch.ElapsedMilliseconds);
@@ -84,21 +82,21 @@ public class MazeBuilder : ScriptableObject {
         // Debug.Log("Now checking Tile of type " + current.tag + "with position in array X: " + ts.arrayPos[0] + " Y: " + ts.arrayPos[1]);
 
         // Check if maze can be continued in EACH direction
-        foreach (Direction dir in getRandomDirections())
+        foreach (BoardManager.Direction dir in getRandomDirections())
         {
 
             // Stores whether the first AND second tile in the specified direction is empty 
-            bool lookAheadOne = isEmpty(move(current, dir, 1));
-            bool lookAheadTwo = isEmpty(move(current, dir, 2));
+            bool lookAheadOne = BoardManager.isEmpty(BoardManager.move(this.board, current, dir, 1));
+            bool lookAheadTwo = BoardManager.isEmpty(BoardManager.move(this.board, current, dir, 2));
 
             // If both are empty, the maze can continue building
             if (lookAheadOne && lookAheadTwo){
                 stack.Push(current);
 
-                GameObject nextTile = move(current, dir, 1);
+                GameObject nextTile = BoardManager.move(this.board, current, dir, 1);
                 makePath(nextTile);
 
-                GameObject targetTile = move(current, dir, 2);
+                GameObject targetTile = BoardManager.move(this.board, current, dir, 2);
                 makePath(targetTile);
                 check(targetTile, stack);
             }
@@ -111,17 +109,17 @@ public class MazeBuilder : ScriptableObject {
         }
     }
 
-    List<Direction> getRandomDirections()
+    List<BoardManager.Direction> getRandomDirections()
     {
         
-        List<Direction> directionList = Enum.GetValues(typeof(Direction)).Cast<Direction>().ToList();
+        List<BoardManager.Direction> directionList = Enum.GetValues(typeof(BoardManager.Direction)).Cast<BoardManager.Direction>().ToList();
 
         int n = directionList.Count;
         while (n > 1)
         {
             n--;
             int k = rng.Next(n + 1);
-            Direction value = directionList[k];
+            BoardManager.Direction value = directionList[k];
             directionList[k] = directionList[n];
             directionList[n] = value;
         }
@@ -129,71 +127,5 @@ public class MazeBuilder : ScriptableObject {
         return directionList;
     }
 
-    /// <summary>
-    /// Checks if a given cell is an empty tile
-    /// </summary>
-    /// <returns>True if empty, false if any other type</returns>
-    bool isEmpty(GameObject cell)
-    {
-        if (cell == null)
-        {
-            return false;
-        }
-
-        // Checks by tag comparison (THERE MIGHT BE A BETTER WAY TO DO THIS)
-        if (cell.CompareTag("emptyTile"))
-        {
-            return true;
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Returns the GameObject ahead by a given number of tiles, in a given direction.
-    /// </summary>
-    /// <param name="cell">The cell to move FROM</param>
-    /// <param name="dir">The direction (using Enum Types)</param>
-    /// <param name="amount">Magnitude of the move</param>
-    GameObject move(GameObject cell, Direction dir, int amount)
-    {   
-        GameObject target = null;
-        int deltaX = 0;
-        int deltaY = 0;
-
-        // Switchcase to calculate deltax and deltay for given direction
-        switch (dir)
-        {
-            case Direction.UP:
-                deltaY += amount;
-                break;
-
-            case Direction.DOWN:
-                deltaY -= amount;
-                break;
-
-            case Direction.RIGHT:
-                deltaX += amount;
-                break;
-
-            case Direction.LEFT:
-                deltaX -= amount;
-                break;
-        }
-
-        // This exists to prevent throwing an error when the function checks outside the maze - instead, it will return null.
-        try
-        {
-            // Gets the cell at the array position corresponding to the movement 
-            int[] pos = (cell.GetComponent("TileScript") as TileScript).arrayPos;
-            target = board[pos[0] + deltaX, (pos[1] + deltaY)];
-        }
-        catch (IndexOutOfRangeException e)
-        {
-            return null;
-        }
-
-        return target;
-    }
 
 }

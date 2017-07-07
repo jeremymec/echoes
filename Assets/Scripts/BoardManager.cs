@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -15,6 +16,9 @@ public class BoardManager : MonoBehaviour {
 
     // Region Manager
     public RegionManager regionManager;
+
+    // Enums for Direction
+    public enum Direction { UP, DOWN, LEFT, RIGHT}
 
 	public void setupScene (int width, int height) {
         // Debug.Log("Time at beginning of setupScene, " + GameManager.watch.ElapsedMilliseconds);
@@ -54,7 +58,7 @@ public class BoardManager : MonoBehaviour {
         placeRooms(500);
 
         // Debug.Log("Time before setting up maze, " + GameManager.watch.ElapsedMilliseconds);
-        // setupMaze();
+        setupMaze();
 
     }
 
@@ -62,15 +66,15 @@ public class BoardManager : MonoBehaviour {
     {
         for (int i = 0; i < frequency; i++)
         {
-            int sizeX = Random.Range(3, 8);
-            int sizeY = Random.Range(3, 8);
+            int sizeX = UnityEngine.Random.Range(3, 8);
+            int sizeY = UnityEngine.Random.Range(3, 8);
 
-            int startX = Random.Range(0, board.GetLength(0) - (sizeX + 1));
-            int startY = Random.Range(0, board.GetLength(1) - (sizeY + 1));
+            int startX = UnityEngine.Random.Range(0, board.GetLength(0) - (sizeX + 1));
+            int startY = UnityEngine.Random.Range(0, board.GetLength(1) - (sizeY + 1));
 
             int[] bottomLeft = { startX, startY };
 
-            Debug.Log("MAKING ROOM, ATTEMPT #" + i + "WITH BOTTOMLEFT X: " + startX + " Y: " + startY);
+            // Debug.Log("MAKING ROOM, ATTEMPT #" + i + "WITH BOTTOMLEFT X: " + startX + " Y: " + startY);
             createRoom(bottomLeft, sizeX, sizeY);
         }
     }
@@ -128,11 +132,119 @@ public class BoardManager : MonoBehaviour {
 
     void setupMaze()
     {
-        
+        for (int y = 0; y < board.GetLength(1); y++)
+        {
+
+            for (int x = 0; x < board.GetLength(0); x++)
+            {
+                if (checkEmptyBlock(board[x, y]))
+                {
+                    Debug.Log("Creating Instance of Maze Builder at X: " + x + " Y: " + y);
+
+                    MazeBuilder mazeBuilder = ScriptableObject.CreateInstance<MazeBuilder>();
+                    Region<TileScript> r = regionManager.addRegion<TileScript>();
+                    mazeBuilder.init(this.board, this.tiles, x, y, r);
+                }
+            }
+
+        }
     }
 
-	// Update is called once per frame
-	void Update () {
+    /// <summary>
+    /// Helper method for setupMaze() which returns if a cell is an empty block, and thus safe for MazeBuilder to be run on 
+    /// </summary>
+    bool checkEmptyBlock(GameObject cell)
+    {
+        if (cell.GetComponent<TileScript>().getRoom() != null)
+        {
+            return false;
+        }
+
+        int nonEmptyCount = 0;
+
+        foreach (Direction dir in Enum.GetValues(typeof(BoardManager.Direction))){
+            if (!(isEmpty(move(this.board, cell, dir, 1)))){
+                nonEmptyCount++;
+            }
+        }
+
+        if (nonEmptyCount >= 2)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Returns the GameObject ahead by a given number of tiles, in a given direction.
+    /// </summary>
+    /// <param name="cell">The cell to move FROM</param>
+    /// <param name="dir">The direction (using Enum Types)</param>
+    /// <param name="amount">Magnitude of the move</param>
+    public static GameObject move(GameObject[,] board, GameObject cell, Direction dir, int amount)
+    {
+        GameObject target = null;
+        int deltaX = 0;
+        int deltaY = 0;
+
+        // Switchcase to calculate deltax and deltay for given direction
+        switch (dir)
+        {
+            case Direction.UP:
+                deltaY += amount;
+                break;
+
+            case Direction.DOWN:
+                deltaY -= amount;
+                break;
+
+            case Direction.RIGHT:
+                deltaX += amount;
+                break;
+
+            case Direction.LEFT:
+                deltaX -= amount;
+                break;
+        }
+
+        // This exists to prevent throwing an error when the function checks outside the maze - instead, it will return null.
+        try
+        {
+            // Gets the cell at the array position corresponding to the movement 
+            int[] pos = (cell.GetComponent("TileScript") as TileScript).arrayPos;
+            target = board[pos[0] + deltaX, (pos[1] + deltaY)];
+        }
+        catch (IndexOutOfRangeException e)
+        {
+            return null;
+        }
+
+        return target;
+    }
+
+        /// <summary>
+    /// Checks if a given cell is an empty tile
+    /// </summary>
+    /// <returns>True if empty, false if any other type</returns>
+    public static bool isEmpty(GameObject cell)
+    {
+        if (cell == null)
+        {
+            return false;
+        }
+
+        // Checks by tag comparison (THERE MIGHT BE A BETTER WAY TO DO THIS)
+        if (cell.CompareTag("emptyTile"))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    // Update is called once per frame
+    void Update () {
 		
 	}
 }
