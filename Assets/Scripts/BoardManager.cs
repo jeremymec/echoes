@@ -55,7 +55,7 @@ public class BoardManager : MonoBehaviour {
 
         }
 
-        placeRooms(500);
+        placeRooms(10);
 
         // Debug.Log("Time before setting up maze, " + GameManager.watch.ElapsedMilliseconds);
         setupMaze();
@@ -66,8 +66,8 @@ public class BoardManager : MonoBehaviour {
     {
         for (int i = 0; i < frequency; i++)
         {
-            int sizeX = UnityEngine.Random.Range(3, 8);
-            int sizeY = UnityEngine.Random.Range(3, 8);
+            int sizeX = UnityEngine.Random.Range(4, 9);
+            int sizeY = UnityEngine.Random.Range(4, 9);
 
             int startX = UnityEngine.Random.Range(0, board.GetLength(0) - (sizeX + 1));
             int startY = UnityEngine.Random.Range(0, board.GetLength(1) - (sizeY + 1));
@@ -111,7 +111,16 @@ public class BoardManager : MonoBehaviour {
                 GameObject oldTile = this.board[x, y];
                 int[] targetPos = oldTile.GetComponent<TileScript>().arrayPos;
 
-                GameObject tile = Instantiate(tiles[1], new Vector3(targetPos[0], targetPos[1], 0), Quaternion.identity) as GameObject;
+                GameObject tile = null;
+
+                if ((y == bottomLeft[1] || y == sizeY + bottomLeft[1]) || (x == bottomLeft[0] || x == sizeX + bottomLeft[0]))
+                {
+                    tile = Instantiate(tiles[0], new Vector3(targetPos[0], targetPos[1], 0), Quaternion.identity) as GameObject;
+                } else
+                {
+                    tile = Instantiate(tiles[1], new Vector3(targetPos[0], targetPos[1], 0), Quaternion.identity) as GameObject;
+                }
+
                 // Debug.Log("Making new Tile at X: " + targetPos[0] + " Y: " + targetPos[1]);
                 tile.GetComponent<TileScript>().setRoom(room);
                 this.board[targetPos[0], targetPos[1]] = tile;
@@ -160,15 +169,25 @@ public class BoardManager : MonoBehaviour {
             return false;
         }
 
+        if (!(isEmpty(cell)))
+        {
+            return false;
+        }
+
         int nonEmptyCount = 0;
 
         foreach (Direction dir in Enum.GetValues(typeof(BoardManager.Direction))){
             if (!(isEmpty(move(this.board, cell, dir, 1)))){
+                return false;
+            }
+
+            if (!(isEmpty(move(this.board, cell, dir, 2))))
+            {
                 nonEmptyCount++;
             }
         }
 
-        if (nonEmptyCount >= 2)
+        if (nonEmptyCount >= 4)
         {
             return false;
         }

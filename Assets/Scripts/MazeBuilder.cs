@@ -42,11 +42,6 @@ public class MazeBuilder : ScriptableObject {
         Debug.Log("Time after setting up maze, " + GameManager.watch.ElapsedMilliseconds);
     }
     
-    //TODO: REMOVE THIS, DEBUGGING ONLY
-    public void test()
-    {
-        
-    }
 
     /// <summary>
     /// Takes an empty tile and 'makes a path', i.e. turn it into a traversable floor tile
@@ -86,8 +81,11 @@ public class MazeBuilder : ScriptableObject {
         {
 
             // Stores whether the first AND second tile in the specified direction is empty 
-            bool lookAheadOne = BoardManager.isEmpty(BoardManager.move(this.board, current, dir, 1));
-            bool lookAheadTwo = BoardManager.isEmpty(BoardManager.move(this.board, current, dir, 2));
+            GameObject aheadOne = BoardManager.move(this.board, current, dir, 1);
+            GameObject aheadTwo = BoardManager.move(this.board, current, dir, 2);
+
+            bool lookAheadOne = (BoardManager.isEmpty(aheadOne) && (checkSurrounding(aheadOne) <= 1));
+            bool lookAheadTwo = (BoardManager.isEmpty(aheadTwo) && (checkSurrounding(aheadTwo) <= 0));
 
             // If both are empty, the maze can continue building
             if (lookAheadOne && lookAheadTwo){
@@ -98,6 +96,7 @@ public class MazeBuilder : ScriptableObject {
 
                 GameObject targetTile = BoardManager.move(this.board, current, dir, 2);
                 makePath(targetTile);
+
                 check(targetTile, stack);
             }
         }
@@ -107,6 +106,24 @@ public class MazeBuilder : ScriptableObject {
         {
             check(stack.Pop(), stack);
         }
+    }
+
+    /// <summary>
+    /// Checks the area surronding a cell for non-empty cells. Returns the number of surronding, non-empty cells
+    /// </summary>
+    /// <param name="cell"></param>
+    int checkSurrounding(GameObject cell)
+    {
+        int count = 0;
+
+        foreach (BoardManager.Direction dir in getRandomDirections())
+        {
+           if (!(BoardManager.isEmpty(BoardManager.move(this.board, cell, dir, 1)))){
+                count++;
+            }
+        }
+
+        return count;
     }
 
     List<BoardManager.Direction> getRandomDirections()
