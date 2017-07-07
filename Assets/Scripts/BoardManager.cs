@@ -10,6 +10,9 @@ public class BoardManager : MonoBehaviour {
     // 2D Array of Tile GameObjects that make up the current game board
     public GameObject[,] board;
 
+    // List of Room Objects on the board
+    public List<Room> rooms;
+
 	public void setupScene (int width, int height) {
         Debug.Log("Time at beginning of setupScene, " + GameManager.watch.ElapsedMilliseconds);
         createBoard(width, height);
@@ -106,6 +109,8 @@ public class BoardManager : MonoBehaviour {
                 GameObject.Destroy(oldTile);
             }
         }
+
+        rooms.Add(room);
 
         return true;
     }
