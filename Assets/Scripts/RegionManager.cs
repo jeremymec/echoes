@@ -4,16 +4,18 @@ using UnityEngine;
 
 public class RegionManager {
 
-    ArrayList regions; // COULD BE IMPROVED
+    public ArrayList regions; // COULD BE IMPROVED
 
     public RegionManager()
     {
-
+        regions = new ArrayList();
     }
 
-    public void addRegion<T>(T region)
+    public Region<T> addRegion<T>()
     {
-        regions.Add(new Region<T>());
+        Region<T> r = new Region<T>();
+        regions.Add(r);
+        return r;
     }
 
 

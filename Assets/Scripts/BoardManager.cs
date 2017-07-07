@@ -13,8 +13,11 @@ public class BoardManager : MonoBehaviour {
     // List of Room Objects on the board
     public List<Room> rooms;
 
+    // Region Manager
+    public RegionManager regionManager;
+
 	public void setupScene (int width, int height) {
-        Debug.Log("Time at beginning of setupScene, " + GameManager.watch.ElapsedMilliseconds);
+        // Debug.Log("Time at beginning of setupScene, " + GameManager.watch.ElapsedMilliseconds);
         createBoard(width, height);
 	}
 
@@ -25,6 +28,9 @@ public class BoardManager : MonoBehaviour {
     /// <param name="height">Height of Board</param>
     void createBoard(int width, int height)
     {
+        // Initializes Region manager to be used later in board creation process
+        this.regionManager = new RegionManager();
+
         // Initializes array with GameObjects, that will be filled with Tiles
         board = new GameObject[width, height];
 
@@ -110,8 +116,13 @@ public class BoardManager : MonoBehaviour {
             }
         }
 
+        // Instructs the region manager to create a new region with the room type, and assigns it to the newly created room
+        room.setRegion(regionManager.addRegion<Room>());
+            
+        // Adds the newly created room to list of rooms
         rooms.Add(room);
 
+        // Since a room was created, return true
         return true;
     }
 
