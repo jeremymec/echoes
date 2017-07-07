@@ -6,6 +6,7 @@ public class TileScript : MonoBehaviour {
 
     public int[] arrayPos;
     Room room;
+    Region<TileScript> region;
 
 	// Use this for initialization
 	void Start () {
@@ -25,6 +26,16 @@ public class TileScript : MonoBehaviour {
     void insert(int[] pos)
     {
         this.arrayPos = pos;
+    }
+
+    public Region<TileScript> getRegion()
+    {
+        return this.region;
+    }
+
+    public void setRegion(Region<TileScript> region)
+    {
+        this.region = region;
     }
 
 	// Update is called once per frame

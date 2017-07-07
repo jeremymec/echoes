@@ -22,17 +22,22 @@ public class MazeBuilder : ScriptableObject {
     // Empty stack utilized by the DFS algorithm
     Stack<GameObject> stack;
 
+    // Region for the maze
+    Region<TileScript> region;
+
 	public MazeBuilder()
     {
 
     }
 
-    public void init(GameObject[,] board, GameObject[] tiles, int startX, int startY)
+    public void init(GameObject[,] board, GameObject[] tiles, int startX, int startY, Region<TileScript> region)
     {
         this.board = board;
         this.tiles = tiles;
         this.stack = new Stack<GameObject>();
         this.start = board[startX, startY];
+        this.region = region;
+
         makePath(this.start);
 
         check(this.start, this.stack);
@@ -56,7 +61,11 @@ public class MazeBuilder : ScriptableObject {
 
         // Creates new floor tile and replaces the array reference to the empty tile with this new tile
         GameObject tile = Instantiate(tiles[1], new Vector3(targetPos[0], targetPos[1], 0), Quaternion.identity) as GameObject;
-        tile.GetComponent<TileScript>().arrayPos = targetPos;
+
+        TileScript ts = tile.GetComponent<TileScript>();
+        ts.arrayPos = targetPos;
+        ts.setRegion(this.region);
+
         this.board[targetPos[0], targetPos[1]] = tile;
 
         // Removes the target from the game board

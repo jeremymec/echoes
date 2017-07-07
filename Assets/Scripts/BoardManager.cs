@@ -128,9 +128,7 @@ public class BoardManager : MonoBehaviour {
 
     void setupMaze()
     {
-        // Creates a new MazeBuilder object for the newly created board fill of empty tiles
-        MazeBuilder mazeBuilder = ScriptableObject.CreateInstance<MazeBuilder>();
-        mazeBuilder.init(this.board, this.tiles, 0, 0);
+        
     }
 
 	// Update is called once per frame
