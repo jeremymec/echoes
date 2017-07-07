@@ -55,7 +55,7 @@ public class BoardManager : MonoBehaviour {
 
         }
 
-        placeRooms(10);
+        placeRooms(100);
 
         // Debug.Log("Time before setting up maze, " + GameManager.watch.ElapsedMilliseconds);
         setupMaze();
@@ -249,6 +249,11 @@ public class BoardManager : MonoBehaviour {
     public static bool isEmpty(GameObject cell)
     {
         if (cell == null)
+        {
+            return false;
+        }
+
+        if (cell.GetComponent<TileScript>().getRoom() != null)
         {
             return false;
         }
