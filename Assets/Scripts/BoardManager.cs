@@ -20,6 +20,8 @@ public class BoardManager : MonoBehaviour {
     // Enums for Direction
     public enum Direction { UP, DOWN, LEFT, RIGHT}
 
+    public enum Connector { DOOR }
+
 	public void setupScene (int width, int height) {
         // Debug.Log("Time at beginning of setupScene, " + GameManager.watch.ElapsedMilliseconds);
 
@@ -29,7 +31,7 @@ public class BoardManager : MonoBehaviour {
 
         setupMaze();
 
-        connectRegions()
+        connectRegions();
     }
 
     /// <summary>
@@ -138,6 +140,10 @@ public class BoardManager : MonoBehaviour {
         Room room = ScriptableObject.CreateInstance<Room>();
         room.init(this.board, bottomLeft, sizeX, sizeY);
 
+        // Instructs the region manager to create a new region with the room type, and assigns it to the newly created room
+        Region roomRegion = regionManager.addRegion();
+        room.setRegion(roomRegion);
+
         for (int y = bottomLeft[1]; y < sizeY + bottomLeft[1]; y++)
         {
             for (int x = bottomLeft[0]; x < sizeX + bottomLeft[0]; x++)
@@ -146,25 +152,19 @@ public class BoardManager : MonoBehaviour {
                 int[] targetPos = oldTile.GetComponent<TileScript>().arrayPos;
 
                 GameObject tile = null;
+                tile = Instantiate(tiles[1], new Vector3(targetPos[0], targetPos[1], 0), Quaternion.identity) as GameObject;
+                TileScript tileScript = tile.GetComponent<TileScript>();
 
-                //if ((y == bottomLeft[1] || y == sizeY + bottomLeft[1]) || (x == bottomLeft[0] || x == sizeX + bottomLeft[0]))
-                //{
-                //    tile = Instantiate(tiles[0], new Vector3(targetPos[0], targetPos[1], 0), Quaternion.identity) as GameObject;
-                // } else
-                // {
-                    tile = Instantiate(tiles[1], new Vector3(targetPos[0], targetPos[1], 0), Quaternion.identity) as GameObject;
-                // }
+                tileScript.clone(oldTile.GetComponent<TileScript>());
 
-                // Debug.Log("Making new Tile at X: " + targetPos[0] + " Y: " + targetPos[1]);
-                tile.GetComponent<TileScript>().setRoom(room);
+                tileScript.setRoom(room);
+                tileScript.setRegion(roomRegion);
+
                 this.board[targetPos[0], targetPos[1]] = tile;
 
                 GameObject.Destroy(oldTile);
             }
         }
-
-        // Instructs the region manager to create a new region with the room type, and assigns it to the newly created room
-        room.setRegion(regionManager.addRegion<Room>());
             
         // Adds the newly created room to list of rooms
         rooms.Add(room);
@@ -185,11 +185,108 @@ public class BoardManager : MonoBehaviour {
                     Debug.Log("Creating Instance of Maze Builder at X: " + x + " Y: " + y);
 
                     MazeBuilder mazeBuilder = ScriptableObject.CreateInstance<MazeBuilder>();
-                    Region<TileScript> r = regionManager.addRegion<TileScript>();
+                    Region r = regionManager.addRegion();
                     mazeBuilder.init(this.board, this.tiles, x, y, r);
                 }
             }
 
+        }
+    }
+
+    void connectRegions()
+    {
+        while (regionManager.regions.Count > 1)
+        {
+
+            for (int y = 0; y < board.GetLength(1); y++)
+            {
+                    for (int x = 0; x < board.GetLength(0); x++)
+                    {
+                    bool connectorMade = false;
+                        GameObject currentTile = board[x, y];
+                        TileScript currentTileScript = currentTile.GetComponent<TileScript>();
+
+
+                    // Only empty cells can be valid connectors
+                    if (isEmpty(currentTile))
+                    {
+
+                        List<GameObject> adjacentTiles = new List<GameObject>();
+
+                        // Generates a list of non-empty adjacent tile objects
+                        foreach (BoardManager.Direction dir in Enum.GetValues(typeof(BoardManager.Direction)))
+                        {
+                            GameObject lookAhead = BoardManager.move(board, currentTile, dir, 1);
+
+                            // Null checker since move function returns null when out of bounds
+                            if (lookAhead == null)
+                            {
+                                continue;
+                            }
+
+                            if (!(isEmpty(lookAhead)))
+                            {
+                                adjacentTiles.Add(lookAhead);
+                            }
+
+                        }
+
+                        foreach (GameObject firstTile in adjacentTiles)
+                        {
+                            foreach (GameObject secondTile in adjacentTiles)
+                            {
+                                if (connectorMade)
+                                {
+                                    break;
+                                }
+                                TileScript firstTileScript = firstTile.GetComponent<TileScript>();
+                                TileScript secondTileScript = firstTile.GetComponent<TileScript>();
+
+                                Region firstRegion = firstTileScript.getRegion();
+                                Region secondRegion = secondTileScript.getRegion();
+
+                                if (firstRegion.getID() == secondRegion.getID())
+                                {
+                                    // addConnector(firstTile, secondTile, Connector.DOOR);
+                                    regionManager.mergeRegions(firstRegion, secondRegion);
+
+                                    // A tile is ONE connector at most, so if connector is found skip ahead to next tile in the loop
+                                    connectorMade = true;
+                                }
+                            }
+
+                        }
+
+
+
+
+                    }
+                }
+            }
+        }
+    }
+    
+    void addConnector(GameObject tileOne, GameObject tileTwo, Connector type)
+    {
+        if (type == Connector.DOOR)
+        {
+            TileScript tileOneScript = tileOne.GetComponent<TileScript>();
+            TileScript tileTwoScript = tileTwo.GetComponent<TileScript>();
+
+            int[] tileOnePos = tileOneScript.arrayPos;
+            int[] tileTwoPos = tileTwoScript.arrayPos;
+
+            GameObject newTileOne = Instantiate(tiles[1], new Vector3(tileOnePos[0], tileOnePos[1], 0), Quaternion.identity) as GameObject;
+            GameObject newTileTwo = Instantiate(tiles[1], new Vector3(tileTwoPos[0], tileTwoPos[1], 0), Quaternion.identity) as GameObject;
+
+            newTileOne.GetComponent<TileScript>().clone(tileOneScript);
+            newTileTwo.GetComponent<TileScript>().clone(tileTwoScript);
+
+            board[tileOnePos[0], tileOnePos[1]] = newTileOne;
+            board[tileOnePos[0], tileOnePos[1]] = newTileTwo;
+
+            GameObject.Destroy(tileOne);
+            GameObject.Destroy(tileTwo);
         }
     }
 

@@ -21,14 +21,14 @@ public class MazeBuilder : ScriptableObject {
     Stack<GameObject> stack;
 
     // Region for the maze
-    Region<TileScript> region;
+    Region region;
 
 	public MazeBuilder()
     {
 
     }
 
-    public void init(GameObject[,] board, GameObject[] tiles, int startX, int startY, Region<TileScript> region)
+    public void init(GameObject[,] board, GameObject[] tiles, int startX, int startY, Region region)
     {
         this.board = board;
         this.tiles = tiles;
@@ -56,7 +56,7 @@ public class MazeBuilder : ScriptableObject {
         GameObject tile = Instantiate(tiles[1], new Vector3(targetPos[0], targetPos[1], 0), Quaternion.identity) as GameObject;
 
         TileScript ts = tile.GetComponent<TileScript>();
-        ts.arrayPos = targetPos;
+        ts.clone(target.GetComponent<TileScript>());
         ts.setRegion(this.region);
 
         this.board[targetPos[0], targetPos[1]] = tile;

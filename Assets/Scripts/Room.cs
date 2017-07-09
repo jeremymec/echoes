@@ -11,7 +11,7 @@ public class Room : ScriptableObject {
 
     int[] bottomLeft;
 
-    Region<Room> region;
+    Region region;
 
     public Room()
     {
@@ -26,12 +26,12 @@ public class Room : ScriptableObject {
         this.sizeY = sizeY;
     }
 
-    public Region<Room> getRegion()
+    public Region getRegion()
     {
         return this.region;
     }
 
-    public void setRegion(Region<Room> region)
+    public void setRegion(Region region)
     {
         this.region = region;
     }
