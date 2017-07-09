@@ -55,7 +55,7 @@ public class BoardManager : MonoBehaviour {
 
         }
 
-        placeRooms(100);
+        placeRooms(500);
 
         // Debug.Log("Time before setting up maze, " + GameManager.watch.ElapsedMilliseconds);
         setupMaze();
@@ -68,15 +68,47 @@ public class BoardManager : MonoBehaviour {
         {
             int sizeX = UnityEngine.Random.Range(4, 9);
             int sizeY = UnityEngine.Random.Range(4, 9);
+            sizeX = processNumber(false, sizeX);
+            sizeY = processNumber(false, sizeY);
 
-            int startX = UnityEngine.Random.Range(0, board.GetLength(0) - (sizeX + 1));
-            int startY = UnityEngine.Random.Range(0, board.GetLength(1) - (sizeY + 1));
+            int startX = UnityEngine.Random.Range(0, board.GetLength(0) - (sizeX + 2));
+            int startY = UnityEngine.Random.Range(0, board.GetLength(1) - (sizeY + 2));
+            startX = processNumber(false, startX);
+            startY = processNumber(false, startY);
 
             int[] bottomLeft = { startX, startY };
 
             // Debug.Log("MAKING ROOM, ATTEMPT #" + i + "WITH BOTTOMLEFT X: " + startX + " Y: " + startY);
             createRoom(bottomLeft, sizeX, sizeY);
         }
+    }
+
+    // if not even, then odd
+    int processNumber(bool odd, int num)
+    {   
+        if (odd)
+        {
+            if (num % 2 == 0)
+            {
+                return num;
+
+            }
+            else
+            {
+                return num + 1;
+            }
+        } else
+        {
+            if (num % 2 == 0)
+            {
+                return num + 1;
+            }
+            else
+            {
+                return num;
+            }
+        }
+
     }
 
     bool createRoom(int[] bottomLeft, int sizeX, int sizeY)
@@ -113,13 +145,13 @@ public class BoardManager : MonoBehaviour {
 
                 GameObject tile = null;
 
-                if ((y == bottomLeft[1] || y == sizeY + bottomLeft[1]) || (x == bottomLeft[0] || x == sizeX + bottomLeft[0]))
-                {
-                    tile = Instantiate(tiles[0], new Vector3(targetPos[0], targetPos[1], 0), Quaternion.identity) as GameObject;
-                } else
-                {
+                //if ((y == bottomLeft[1] || y == sizeY + bottomLeft[1]) || (x == bottomLeft[0] || x == sizeX + bottomLeft[0]))
+                //{
+                //    tile = Instantiate(tiles[0], new Vector3(targetPos[0], targetPos[1], 0), Quaternion.identity) as GameObject;
+                // } else
+                // {
                     tile = Instantiate(tiles[1], new Vector3(targetPos[0], targetPos[1], 0), Quaternion.identity) as GameObject;
-                }
+                // }
 
                 // Debug.Log("Making new Tile at X: " + targetPos[0] + " Y: " + targetPos[1]);
                 tile.GetComponent<TileScript>().setRoom(room);
