@@ -22,11 +22,14 @@ public class BoardManager : MonoBehaviour {
 
 	public void setupScene (int width, int height) {
         // Debug.Log("Time at beginning of setupScene, " + GameManager.watch.ElapsedMilliseconds);
+
         createBoard(width, height);
 
-        placeRooms(500);
+        placeRooms(2);
 
         setupMaze();
+
+        regionManager.selectMainRegion();
     }
 
     /// <summary>

@@ -11,6 +11,14 @@ public class RegionManager {
         regions = new ArrayList();
     }
 
+    public void unifyRegions()
+    {
+        foreach(var r in regions)
+        {
+            
+        }
+    }
+
     public Region<T> addRegion<T>()
     {
         Region<T> r = new Region<T>();
