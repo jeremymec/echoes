@@ -23,7 +23,11 @@ public class BoardManager : MonoBehaviour {
 	public void setupScene (int width, int height) {
         // Debug.Log("Time at beginning of setupScene, " + GameManager.watch.ElapsedMilliseconds);
         createBoard(width, height);
-	}
+
+        placeRooms(500);
+
+        setupMaze();
+    }
 
     /// <summary>
     /// Initializes and fills 2D array of GameObjects with newly Instantiated empty tiles (which are also displayed on the game screen)
@@ -54,11 +58,6 @@ public class BoardManager : MonoBehaviour {
             }
 
         }
-
-        placeRooms(500);
-
-        // Debug.Log("Time before setting up maze, " + GameManager.watch.ElapsedMilliseconds);
-        setupMaze();
 
     }
 
