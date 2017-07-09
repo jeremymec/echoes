@@ -29,7 +29,7 @@ public class BoardManager : MonoBehaviour {
 
         setupMaze();
 
-        regionManager.selectMainRegion();
+        connectRegions()
     }
 
     /// <summary>

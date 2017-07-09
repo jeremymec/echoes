@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Region<T> {
+public class Region {
 
     public static int count = 0;
 
@@ -18,4 +18,8 @@ public class Region<T> {
         return this.id;
     }
 
+    public void setID(Region region)
+    {
+        this.id = region.id;
+    }
 }

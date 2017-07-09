@@ -4,25 +4,18 @@ using UnityEngine;
 
 public class RegionManager {
 
-    public ArrayList regions; // COULD BE IMPROVED
+    public List<Region> regions; // COULD BE IMPROVED
 
     public RegionManager()
     {
-        regions = new ArrayList();
+        regions = new List<Region>();
     }
 
-    public void unifyRegions()
-    {
-        foreach(var r in regions)
-        {
-            
-        }
-    }
 
-    public Region<T> addRegion<T>()
+    public Region addRegion()
     {
-        Region<T> r = new Region<T>();
-        regions.Add(r);
+        Region r = new Region();
+        this.regions.Add(r);
         return r;
     }
 
