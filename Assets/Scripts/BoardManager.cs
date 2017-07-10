@@ -27,9 +27,9 @@ public class BoardManager : MonoBehaviour {
 
         createBoard(width, height);
 
-        placeRooms(2);
+        // placeRooms(5);
 
-        setupMaze();
+         setupMaze();
 
         connectRegions();
     }
@@ -197,73 +197,86 @@ public class BoardManager : MonoBehaviour {
     {
         while (regionManager.regions.Count > 1)
         {
-
-            for (int y = 0; y < board.GetLength(1); y++)
+            if (findConnectors() == 0)
             {
-                    for (int x = 0; x < board.GetLength(0); x++)
+                break;
+            }
+           
+        }
+    }
+
+    int findConnectors()
+    {
+        int connectors = 0;
+
+        for (int y = 0; y < board.GetLength(1); y++)
+        {
+            for (int x = 0; x < board.GetLength(0); x++)
+            {
+                bool connectorMade = false;
+                GameObject currentTile = board[x, y];
+                TileScript currentTileScript = currentTile.GetComponent<TileScript>();
+
+
+                // Only empty cells can be valid connectors
+                if (isEmpty(currentTile))
+                {
+
+                    List<GameObject> adjacentTiles = new List<GameObject>();
+
+                    // Generates a list of non-empty adjacent tile objects
+                    foreach (BoardManager.Direction dir in Enum.GetValues(typeof(BoardManager.Direction)))
                     {
-                    bool connectorMade = false;
-                        GameObject currentTile = board[x, y];
-                        TileScript currentTileScript = currentTile.GetComponent<TileScript>();
+                        GameObject lookAhead = BoardManager.move(board, currentTile, dir, 1);
 
-
-                    // Only empty cells can be valid connectors
-                    if (isEmpty(currentTile))
-                    {
-
-                        List<GameObject> adjacentTiles = new List<GameObject>();
-
-                        // Generates a list of non-empty adjacent tile objects
-                        foreach (BoardManager.Direction dir in Enum.GetValues(typeof(BoardManager.Direction)))
+                        // Null checker since move function returns null when out of bounds
+                        if (lookAhead == null)
                         {
-                            GameObject lookAhead = BoardManager.move(board, currentTile, dir, 1);
-
-                            // Null checker since move function returns null when out of bounds
-                            if (lookAhead == null)
-                            {
-                                continue;
-                            }
-
-                            if (!(isEmpty(lookAhead)))
-                            {
-                                adjacentTiles.Add(lookAhead);
-                            }
-
+                            continue;
                         }
 
-                        foreach (GameObject firstTile in adjacentTiles)
+                        if (!(isEmpty(lookAhead)))
                         {
-                            foreach (GameObject secondTile in adjacentTiles)
-                            {
-                                if (connectorMade)
-                                {
-                                    break;
-                                }
-                                TileScript firstTileScript = firstTile.GetComponent<TileScript>();
-                                TileScript secondTileScript = firstTile.GetComponent<TileScript>();
-
-                                Region firstRegion = firstTileScript.getRegion();
-                                Region secondRegion = secondTileScript.getRegion();
-
-                                if (firstRegion.getID() == secondRegion.getID())
-                                {
-                                    // addConnector(firstTile, secondTile, Connector.DOOR);
-                                    regionManager.mergeRegions(firstRegion, secondRegion);
-
-                                    // A tile is ONE connector at most, so if connector is found skip ahead to next tile in the loop
-                                    connectorMade = true;
-                                }
-                            }
-
+                            adjacentTiles.Add(lookAhead);
                         }
-
-
-
 
                     }
+
+                    foreach (GameObject firstTile in adjacentTiles)
+                    {
+                        foreach (GameObject secondTile in adjacentTiles)
+                        {
+                            if (connectorMade)
+                            {
+                                break;
+                            }
+                            TileScript firstTileScript = firstTile.GetComponent<TileScript>();
+                            TileScript secondTileScript = firstTile.GetComponent<TileScript>();
+
+                            Region firstRegion = firstTileScript.getRegion();
+                            Region secondRegion = secondTileScript.getRegion();
+
+                            if (firstRegion.getID() != secondRegion.getID())
+                            {
+                                // addConnector(firstTile, secondTile, Connector.DOOR);
+                                regionManager.mergeRegions(firstRegion, secondRegion);
+
+                                connectors++;
+
+                                // A tile is ONE connector at most, so if connector is found skip ahead to next tile in the loop
+                                connectorMade = true;
+                            }
+                        }
+
+                    }
+
+
+
                 }
             }
         }
+
+        return connectors;
     }
     
     void addConnector(GameObject tileOne, GameObject tileTwo, Connector type)

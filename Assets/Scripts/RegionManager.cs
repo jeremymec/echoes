@@ -14,7 +14,8 @@ public class RegionManager {
 
     public void mergeRegions(Region first, Region second)
     {
-        second.setID(first);        
+        second.setID(first);
+        regions.Remove(first);
     }
 
     public Region addRegion()
