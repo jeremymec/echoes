@@ -27,9 +27,9 @@ public class BoardManager : MonoBehaviour {
 
         createBoard(width, height);
 
-        // placeRooms(5);
+        placeRooms(50);
 
-         setupMaze();
+        setupMaze();
 
         connectRegions();
     }
@@ -250,15 +250,16 @@ public class BoardManager : MonoBehaviour {
                             {
                                 break;
                             }
+
                             TileScript firstTileScript = firstTile.GetComponent<TileScript>();
-                            TileScript secondTileScript = firstTile.GetComponent<TileScript>();
+                            TileScript secondTileScript = secondTile.GetComponent<TileScript>();
 
                             Region firstRegion = firstTileScript.getRegion();
                             Region secondRegion = secondTileScript.getRegion();
 
                             if (firstRegion.getID() != secondRegion.getID())
                             {
-                                // addConnector(firstTile, secondTile, Connector.DOOR);
+                                addConnector(firstTile, currentTile, secondTile, Connector.DOOR);
                                 regionManager.mergeRegions(firstRegion, secondRegion);
 
                                 connectors++;
@@ -279,27 +280,13 @@ public class BoardManager : MonoBehaviour {
         return connectors;
     }
     
-    void addConnector(GameObject tileOne, GameObject tileTwo, Connector type)
+    void addConnector(GameObject firstTile, GameObject connectingTile, GameObject secondTile, Connector type)
     {
         if (type == Connector.DOOR)
         {
-            TileScript tileOneScript = tileOne.GetComponent<TileScript>();
-            TileScript tileTwoScript = tileTwo.GetComponent<TileScript>();
-
-            int[] tileOnePos = tileOneScript.arrayPos;
-            int[] tileTwoPos = tileTwoScript.arrayPos;
-
-            GameObject newTileOne = Instantiate(tiles[1], new Vector3(tileOnePos[0], tileOnePos[1], 0), Quaternion.identity) as GameObject;
-            GameObject newTileTwo = Instantiate(tiles[1], new Vector3(tileTwoPos[0], tileTwoPos[1], 0), Quaternion.identity) as GameObject;
-
-            newTileOne.GetComponent<TileScript>().clone(tileOneScript);
-            newTileTwo.GetComponent<TileScript>().clone(tileTwoScript);
-
-            board[tileOnePos[0], tileOnePos[1]] = newTileOne;
-            board[tileOnePos[0], tileOnePos[1]] = newTileTwo;
-
-            GameObject.Destroy(tileOne);
-            GameObject.Destroy(tileTwo);
+            BoardManager.replaceTile(firstTile, tiles[2], this.board);
+            BoardManager.replaceTile(connectingTile, tiles[1], this.board);
+            BoardManager.replaceTile(secondTile, tiles[2], this.board);
         }
     }
 
@@ -384,6 +371,20 @@ public class BoardManager : MonoBehaviour {
         }
 
         return target;
+    }
+
+    public static void replaceTile(GameObject original, GameObject prefab, GameObject[,] board)
+    {
+        TileScript tsOld = original.GetComponent<TileScript>();
+        int[] targetPos = tsOld.arrayPos;
+
+        GameObject tile = Instantiate(prefab, new Vector3(targetPos[0], targetPos[1], 0), Quaternion.identity) as GameObject;
+        TileScript ts = tile.GetComponent<TileScript>();
+        ts.clone(tsOld);
+
+        board[targetPos[0], targetPos[1]] = tile;
+
+        GameObject.Destroy(original);
     }
 
         /// <summary>

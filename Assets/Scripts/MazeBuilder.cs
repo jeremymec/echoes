@@ -44,28 +44,6 @@ public class MazeBuilder : ScriptableObject {
     
 
     /// <summary>
-    /// Takes an empty tile and 'makes a path', i.e. turn it into a traversable floor tile
-    /// </summary>
-    void makePath(GameObject target)
-    {
-
-        // Gets coords of target to be replaced
-        int[] targetPos = target.GetComponent<TileScript>().arrayPos;
-
-        // Creates new floor tile and replaces the array reference to the empty tile with this new tile
-        GameObject tile = Instantiate(tiles[1], new Vector3(targetPos[0], targetPos[1], 0), Quaternion.identity) as GameObject;
-
-        TileScript ts = tile.GetComponent<TileScript>();
-        ts.clone(target.GetComponent<TileScript>());
-        ts.setRegion(this.region);
-
-        this.board[targetPos[0], targetPos[1]] = tile;
-
-        // Removes the target from the game board
-        Destroy(target);
-    }
-
-    /// <summary>
     /// Recursive function used by DFS to build the maze
     /// </summary>
     /// <param name="current">Current tile in DFS</param>
@@ -92,10 +70,10 @@ public class MazeBuilder : ScriptableObject {
                 stack.Push(current);
 
                 GameObject nextTile = BoardManager.move(this.board, current, dir, 1);
-                makePath(nextTile);
+                BoardManager.replaceTile(nextTile, tiles[1], this.board);
 
                 GameObject targetTile = BoardManager.move(this.board, current, dir, 2);
-                makePath(targetTile);
+                BoardManager.replaceTile(targetTile, tiles[1], this.board);
 
                 check(targetTile, stack);
             }
