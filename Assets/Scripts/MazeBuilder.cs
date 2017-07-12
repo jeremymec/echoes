@@ -70,10 +70,12 @@ public class MazeBuilder : ScriptableObject {
                 stack.Push(current);
 
                 GameObject nextTile = BoardManager.move(this.board, current, dir, 1);
-                BoardManager.replaceTile(nextTile, tiles[1], this.board);
+                GameObject replacementTile = BoardManager.replaceTile(nextTile, tiles[1], this.board);
+                replacementTile.GetComponent<TileScript>().setRegion(this.region);
 
                 GameObject targetTile = BoardManager.move(this.board, current, dir, 2);
-                BoardManager.replaceTile(targetTile, tiles[1], this.board);
+                GameObject replacementTarget = BoardManager.replaceTile(targetTile, tiles[1], this.board);
+                replacementTarget.GetComponent<TileScript>().setRegion(this.region);
 
                 check(targetTile, stack);
             }

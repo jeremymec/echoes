@@ -373,7 +373,7 @@ public class BoardManager : MonoBehaviour {
         return target;
     }
 
-    public static void replaceTile(GameObject original, GameObject prefab, GameObject[,] board)
+    public static GameObject replaceTile(GameObject original, GameObject prefab, GameObject[,] board)
     {
         TileScript tsOld = original.GetComponent<TileScript>();
         int[] targetPos = tsOld.arrayPos;
@@ -385,6 +385,8 @@ public class BoardManager : MonoBehaviour {
         board[targetPos[0], targetPos[1]] = tile;
 
         GameObject.Destroy(original);
+
+        return tile;
     }
 
         /// <summary>
