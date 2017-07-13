@@ -8,11 +8,11 @@ using UnityEngine;
 public class GameManager : MonoBehaviour {
 
     public BoardManager boardScript;
-    public static System.Diagnostics.Stopwatch watch = System.Diagnostics.Stopwatch.StartNew();
+    // public static System.Diagnostics.Stopwatch watch = System.Diagnostics.Stopwatch.StartNew();
 
     // Use this for initialization
     void Start () {
-        Debug.Log("Time at init of GameManager, " + GameManager.watch.ElapsedMilliseconds);
+        // Debug.Log("Time at init of GameManager, " + GameManager.watch.ElapsedMilliseconds);
 
         // Gets the Gameobject BoardManager, and calls the start method on the BoardScript associated with that Object.
         boardScript = GetComponent<BoardManager>();
@@ -21,6 +21,6 @@ public class GameManager : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		
+
 	}
 }

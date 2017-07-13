@@ -4,6 +4,9 @@ using UnityEngine;
 
 public class TileScript : MonoBehaviour {
 
+    public enum Type { UNDECLARED, EMPTY, MAZE, ROOM, PASSAGE }
+
+    Type type;
     public int[] arrayPos;
     Room room;
     Region region;
@@ -21,6 +24,17 @@ public class TileScript : MonoBehaviour {
         this.arrayPos = original.arrayPos;
         this.room = original.room;
         this.region = original.region;
+        this.type = original.type;
+    }
+
+    public Type getType()
+    {
+        return this.type;
+    }
+
+    public void setType(Type type)
+    {
+        this.type = type;
     }
 
     public Room getRoom()

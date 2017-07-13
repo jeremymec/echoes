@@ -36,10 +36,8 @@ public class MazeBuilder : ScriptableObject {
         this.start = board[startX, startY];
         this.region = region;
 
-        // makePath(this.start);
-
         check(this.start, this.stack);
-        Debug.Log("Time after setting up maze, " + GameManager.watch.ElapsedMilliseconds);
+        // Debug.Log("Time after setting up maze, " + GameManager.watch.ElapsedMilliseconds);
     }
     
 
@@ -51,7 +49,8 @@ public class MazeBuilder : ScriptableObject {
     void check(GameObject current, Stack<GameObject> stack)
     {
 
-        TileScript ts = current.GetComponent("TileScript") as TileScript;
+        TileScript ts = current.GetComponent<TileScript>();
+
         // Debug.Log("Now checking Tile of type " + current.tag + "with position in array X: " + ts.arrayPos[0] + " Y: " + ts.arrayPos[1]);
 
         // Check if maze can be continued in EACH direction
@@ -71,11 +70,15 @@ public class MazeBuilder : ScriptableObject {
 
                 GameObject nextTile = BoardManager.move(this.board, current, dir, 1);
                 GameObject replacementTile = BoardManager.replaceTile(nextTile, tiles[1], this.board);
-                replacementTile.GetComponent<TileScript>().setRegion(this.region);
+                TileScript replacementTileScript = replacementTile.GetComponent<TileScript>();
+                replacementTileScript.setRegion(this.region);
+                replacementTileScript.setType(TileScript.Type.MAZE);
 
                 GameObject targetTile = BoardManager.move(this.board, current, dir, 2);
                 GameObject replacementTarget = BoardManager.replaceTile(targetTile, tiles[1], this.board);
-                replacementTarget.GetComponent<TileScript>().setRegion(this.region);
+                TileScript replacementTargetScript = replacementTarget.GetComponent<TileScript>();
+                replacementTargetScript.setRegion(this.region);
+                replacementTargetScript.setType(TileScript.Type.MAZE);
 
                 check(targetTile, stack);
             }

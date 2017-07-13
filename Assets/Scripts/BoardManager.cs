@@ -54,6 +54,7 @@ public class BoardManager : MonoBehaviour {
             {
                 // Instantiates tile of the specified type (empty tile) with coords determined by the for loop, and 0 rotiation.  
                 GameObject tile = Instantiate(tiles[0], new Vector3(x, y, 0), Quaternion.identity) as GameObject;
+                tile.GetComponent<TileScript>().setType(TileScript.Type.EMPTY);
 
                 // Places tile into GameObject array
                 this.board[x, y] = tile;
@@ -151,14 +152,14 @@ public class BoardManager : MonoBehaviour {
                 GameObject oldTile = this.board[x, y];
                 int[] targetPos = oldTile.GetComponent<TileScript>().arrayPos;
 
-                GameObject tile = null;
-                tile = Instantiate(tiles[1], new Vector3(targetPos[0], targetPos[1], 0), Quaternion.identity) as GameObject;
-                TileScript tileScript = tile.GetComponent<TileScript>();
+                GameObject tile = replaceTile(oldTile, tiles[1], this.board);
+                TileScript ts = tile.GetComponent<TileScript>();
 
-                tileScript.clone(oldTile.GetComponent<TileScript>());
+                ts.clone(oldTile.GetComponent<TileScript>());
 
-                tileScript.setRoom(room);
-                tileScript.setRegion(roomRegion);
+                ts.setRoom(room);
+                ts.setRegion(roomRegion);
+                ts.setType(TileScript.Type.ROOM);
 
                 this.board[targetPos[0], targetPos[1]] = tile;
 
@@ -259,6 +260,13 @@ public class BoardManager : MonoBehaviour {
 
                             if (firstRegion.getID() != secondRegion.getID())
                             {
+                                int[] firstPos = firstTileScript.arrayPos;
+                                int[] secondPos = secondTileScript.arrayPos;
+
+                                int deltaX = secondPos[0] - firstPos[0];
+                                int deltaY = secondPos[1] - firstPos[1];
+
+
                                 addConnector(firstTile, currentTile, secondTile, Connector.DOOR);
                                 regionManager.mergeRegions(firstRegion, secondRegion);
 
@@ -280,13 +288,17 @@ public class BoardManager : MonoBehaviour {
         return connectors;
     }
     
-    void addConnector(GameObject firstTile, GameObject connectingTile, GameObject secondTile, Connector type)
+    void addConnector(GameObject firstTile, GameObject connectingTile, GameObject secondTile, Connector type, Direction dir)
     {
         if (type == Connector.DOOR)
         {
-            BoardManager.replaceTile(firstTile, tiles[2], this.board);
-            BoardManager.replaceTile(connectingTile, tiles[1], this.board);
-            BoardManager.replaceTile(secondTile, tiles[2], this.board);
+            BoardManager.replaceTile(firstTile, tiles[3], this.board);
+
+            GameObject connectingTileReplacement = BoardManager.replaceTile(connectingTile, tiles[2], this.board);
+            TileScript connectingTileScript = connectingTileReplacement.GetComponent<TileScript>();
+            connectingTileScript.clone(secondTile.GetComponent<TileScript>());
+
+            BoardManager.replaceTile(secondTile, tiles[3], this.board);
         }
     }
 
@@ -381,6 +393,7 @@ public class BoardManager : MonoBehaviour {
         GameObject tile = Instantiate(prefab, new Vector3(targetPos[0], targetPos[1], 0), Quaternion.identity) as GameObject;
         TileScript ts = tile.GetComponent<TileScript>();
         ts.clone(tsOld);
+        ts.setType(TileScript.Type.PASSAGE);
 
         board[targetPos[0], targetPos[1]] = tile;
 
@@ -400,10 +413,12 @@ public class BoardManager : MonoBehaviour {
             return false;
         }
 
+        /*
         if (cell.GetComponent<TileScript>().getRoom() != null)
         {
             return false;
         }
+        */
 
         // Checks by tag comparison (THERE MIGHT BE A BETTER WAY TO DO THIS)
         if (cell.CompareTag("emptyTile"))
