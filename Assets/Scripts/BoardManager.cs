@@ -27,7 +27,7 @@ public class BoardManager : MonoBehaviour {
 
         createBoard(width, height);
 
-        placeRooms(50);
+        placeRooms(1);
 
         setupMaze();
 
@@ -183,7 +183,7 @@ public class BoardManager : MonoBehaviour {
             {
                 if (checkEmptyBlock(board[x, y]))
                 {
-                    Debug.Log("Creating Instance of Maze Builder at X: " + x + " Y: " + y);
+                    // Debug.Log("Creating Instance of Maze Builder at X: " + x + " Y: " + y);
 
                     MazeBuilder mazeBuilder = ScriptableObject.CreateInstance<MazeBuilder>();
                     Region r = regionManager.addRegion();
@@ -260,14 +260,31 @@ public class BoardManager : MonoBehaviour {
 
                             if (firstRegion.getID() != secondRegion.getID())
                             {
+                                Direction dir = Direction.UP;
+
                                 int[] firstPos = firstTileScript.arrayPos;
                                 int[] secondPos = secondTileScript.arrayPos;
 
-                                int deltaX = secondPos[0] - firstPos[0];
-                                int deltaY = secondPos[1] - firstPos[1];
+                                int[] delta = new int[2];
 
+                                delta[0] = secondPos[0] - firstPos[0];
+                                delta[1] = secondPos[1] - firstPos[1];
 
-                                addConnector(firstTile, currentTile, secondTile, Connector.DOOR);
+                                if (delta[0] == -1)
+                                {
+                                    dir = Direction.LEFT;
+                                } else if (delta[0] == 1)
+                                {
+                                    dir = Direction.RIGHT;
+                                } else if (delta[1] == -1)
+                                {
+                                    dir = Direction.DOWN;
+                                } else if (delta[1] == 1)
+                                {
+                                    dir = Direction.UP;
+                                }
+
+                                addConnector(firstTile, currentTile, secondTile, Connector.DOOR, dir);
                                 regionManager.mergeRegions(firstRegion, secondRegion);
 
                                 connectors++;
@@ -292,15 +309,22 @@ public class BoardManager : MonoBehaviour {
     {
         if (type == Connector.DOOR)
         {
-            BoardManager.replaceTile(firstTile, tiles[3], this.board);
+            GameObject firstTileReplacement = BoardManager.replaceTile(firstTile, tiles[3], this.board);
 
-            GameObject connectingTileReplacement = BoardManager.replaceTile(connectingTile, tiles[2], this.board);
+            GameObject connectingTileReplacement = BoardManager.replaceTile(connectingTile, tiles[4], this.board);
             TileScript connectingTileScript = connectingTileReplacement.GetComponent<TileScript>();
             connectingTileScript.clone(secondTile.GetComponent<TileScript>());
 
-            BoardManager.replaceTile(secondTile, tiles[3], this.board);
+            GameObject secondTileReplacement = BoardManager.replaceTile(secondTile, tiles[3], this.board);
+
+            if (dir == Direction.UP)
+            {
+                firstTileReplacement.transform.localRotation = Quaternion.Euler(0, 0, -90);
+                secondTileReplacement.transform.localRotation = Quaternion.Euler(0, 0, 90);
+            }
         }
     }
+
 
     /// <summary>
     /// Helper method for setupMaze() which returns if a cell is an empty block, and thus safe for MazeBuilder to be run on 
@@ -390,7 +414,10 @@ public class BoardManager : MonoBehaviour {
         TileScript tsOld = original.GetComponent<TileScript>();
         int[] targetPos = tsOld.arrayPos;
 
-        GameObject tile = Instantiate(prefab, new Vector3(targetPos[0], targetPos[1], 0), Quaternion.identity) as GameObject;
+        GameObject tile;
+
+        tile = Instantiate(prefab, new Vector3(targetPos[0], targetPos[1], 0), Quaternion.identity) as GameObject;
+
         TileScript ts = tile.GetComponent<TileScript>();
         ts.clone(tsOld);
         ts.setType(TileScript.Type.PASSAGE);
