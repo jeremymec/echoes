@@ -7,6 +7,9 @@ public class BoardManager : MonoBehaviour {
 
     // Array of different types of Tile PREFABS that can be used to create new tiles
     public GameObject[] tiles;
+    
+    // Needed to programically create portals in different directions
+    public Sprite[] portalSprites;
 
     // 2D Array of Tile GameObjects that make up the current game board
     public GameObject[,] board;
@@ -27,7 +30,7 @@ public class BoardManager : MonoBehaviour {
 
         createBoard(width, height);
 
-        placeRooms(1);
+        placeRooms(3);
 
         setupMaze();
 
@@ -319,8 +322,21 @@ public class BoardManager : MonoBehaviour {
 
             if (dir == Direction.UP)
             {
-                firstTileReplacement.transform.localRotation = Quaternion.Euler(0, 0, -90);
-                secondTileReplacement.transform.localRotation = Quaternion.Euler(0, 0, 90);
+                firstTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[0];
+                secondTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[4];
+
+            } else if (dir == Direction.DOWN)
+            {
+                firstTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[4];
+                secondTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[0];
+            } else if (dir == Direction.LEFT)
+            {
+                firstTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[3];
+                secondTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[2];
+            } else if (dir == Direction.RIGHT)
+            {
+                firstTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[2];
+                secondTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[3];
             }
         }
     }
