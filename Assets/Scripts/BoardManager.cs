@@ -5,6 +5,12 @@ using UnityEngine;
 
 public class BoardManager : MonoBehaviour {
 
+    // Enums for Direction
+    public enum Direction { UP, DOWN, LEFT, RIGHT }
+
+    // Enums for type of connection between rooms
+    public enum Connector { DOOR }
+
     // Array of different types of Tile PREFABS that can be used to create new tiles
     public GameObject[] tiles;
     
@@ -20,17 +26,15 @@ public class BoardManager : MonoBehaviour {
     // Region Manager
     public RegionManager regionManager;
 
-    // Enums for Direction
-    public enum Direction { UP, DOWN, LEFT, RIGHT}
-
-    public enum Connector { DOOR }
+    // Width of emptyFloorTile border around rooms
+    public int roomPadding = 2;
 
 	public void setupScene (int width, int height) {
         // Debug.Log("Time at beginning of setupScene, " + GameManager.watch.ElapsedMilliseconds);
 
         createBoard(width, height);
 
-        placeRooms(1);
+        placeRooms(6);
 
         setupMaze();
 
@@ -130,10 +134,11 @@ public class BoardManager : MonoBehaviour {
 
     bool createRoom(int[] bottomLeft, int sizeX, int sizeY)
     {
-
-        for (int y = bottomLeft[1] - 1; y < sizeY + bottomLeft[1] + 1; y++)
+        
+        // Checks the area of the room, PLUS the padding
+        for (int y = bottomLeft[1] - (roomPadding); y < sizeY + bottomLeft[1] + (roomPadding); y++)
         {
-            for (int x = bottomLeft[0] - 1; x < sizeX + bottomLeft[0] + 1; x++)
+            for (int x = bottomLeft[0] - (roomPadding); x < sizeX + bottomLeft[0] + (roomPadding); x++)
             {
                 // Debug.Log("About to access square at X: " + x + " Y: " + y);
                 try
@@ -157,14 +162,25 @@ public class BoardManager : MonoBehaviour {
         Region roomRegion = regionManager.addRegion();
         room.setRegion(roomRegion);
 
-        for (int y = bottomLeft[1]; y < sizeY + bottomLeft[1]; y++)
+        for (int y = bottomLeft[1] - roomPadding; y < sizeY + bottomLeft[1] + roomPadding; y++)
         {
-            for (int x = bottomLeft[0]; x < sizeX + bottomLeft[0]; x++)
+            for (int x = bottomLeft[0] - roomPadding; x < sizeX + bottomLeft[0] + roomPadding; x++)
             {
                 GameObject oldTile = this.board[x, y];
                 int[] targetPos = oldTile.GetComponent<TileScript>().arrayPos;
 
-                GameObject tile = replaceTile(oldTile, tiles[1], this.board);
+                GameObject tile;
+
+                // If the current tile is in the padding, create a emptyFloorTile instead of a normal tile
+                if ((y < bottomLeft[1] || y > sizeY + bottomLeft[1]) && (x < bottomLeft[0] || x > sizeX + bottomLeft[0]))
+                {
+                    tile = replaceTile(oldTile, tiles[5], this.board);
+
+                } else
+                {
+                    tile = replaceTile(oldTile, tiles[1], this.board);
+                }
+
                 TileScript ts = tile.GetComponent<TileScript>();
 
                 ts.clone(oldTile.GetComponent<TileScript>());
@@ -226,7 +242,6 @@ public class BoardManager : MonoBehaviour {
         {
             for (int x = 0; x < board.GetLength(0); x++)
             {
-                bool connectorMade = false;
                 GameObject currentTile = board[x, y];
                 TileScript currentTileScript = currentTile.GetComponent<TileScript>();
 
@@ -242,8 +257,8 @@ public class BoardManager : MonoBehaviour {
                     GameObject lookAheadLeft = BoardManager.move(board, currentTile, Direction.LEFT, 1);
                     GameObject lookAheadRight = BoardManager.move(board, currentTile, Direction.RIGHT, 1);
 
-                    // A tile pair is only valid if both are not null AND both are not empty
-                    if ((lookAheadUp != null && !(isEmpty(lookAheadUp))) && (lookAheadDown != null && !(isEmpty(lookAheadDown))))
+                    // A tile pair is only valid if both are not null AND both are not empty AND neither are a portal
+                    if ((lookAheadUp != null && !(isEmpty(lookAheadUp)) && !(isPortal(lookAheadUp)) && (lookAheadDown != null && !(isEmpty(lookAheadDown))) && !(isPortal(lookAheadDown))))
                     {
                         adjacentPairs.Add(lookAheadUp, lookAheadDown);
                     }
@@ -305,8 +320,9 @@ public class BoardManager : MonoBehaviour {
                             addConnector(firstTile, currentTile, secondTile, Connector.DOOR, dir);
                             regionManager.mergeRegions(firstRegion, secondRegion);
 
-                            // Tiles cannot be multiple connectors, so if one is found clear the other possible connectors
+                            // Tiles cannot be multiple connectors, so if one is found clear the other possible connectors and break the loop because C# is a special princess
                             adjacentPairs.Clear();
+                            break;
                         }
 
                     }
@@ -318,6 +334,17 @@ public class BoardManager : MonoBehaviour {
         }
 
         return connectors;
+    }
+
+    // Returns if a given tile has a portal script attached to it, and is thus a portal
+    bool isPortal(GameObject tile)
+    {
+        if (tile.GetComponent<PortalScript>() == null)
+        {
+            return false;
+        }
+
+        return true;
     }
     
     void addConnector(GameObject firstTile, GameObject connectingTile, GameObject secondTile, Connector type, Direction dir)
