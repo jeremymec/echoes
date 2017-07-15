@@ -9,10 +9,10 @@ public class TileScript : MonoBehaviour {
     Type type;
     public int[] arrayPos;
     Room room;
-    Region region;
+    public Region region;
 
     // FOR DEBUGGING USE
-    public static bool debug = true;
+    public string debug = "";
 
 	// Use this for initialization
 	void Start () {
@@ -59,7 +59,7 @@ public class TileScript : MonoBehaviour {
 
     public void setRegion(Region region)
     {   
-        if (debug && region == null)
+        if (region == null)
         {
             throw new MissingReferenceException();
         }
@@ -69,6 +69,6 @@ public class TileScript : MonoBehaviour {
 
 	// Update is called once per frame
 	void Update () {
-		
-	}
+
+    }
 }

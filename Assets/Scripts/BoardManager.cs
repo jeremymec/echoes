@@ -30,11 +30,20 @@ public class BoardManager : MonoBehaviour {
 
         createBoard(width, height);
 
-        placeRooms(3);
+        placeRooms(1);
 
         setupMaze();
 
-        connectRegions();
+        // connectRegions();
+    }
+
+    // CURRENT BEING USED TO DEBUG
+    void Update()
+    {
+        if (Input.GetKeyUp(KeyCode.Space))
+        {
+            connectRegions();
+        }
     }
 
     /// <summary>
@@ -225,76 +234,79 @@ public class BoardManager : MonoBehaviour {
                 // Only empty cells can be valid connectors
                 if (isEmpty(currentTile))
                 {
+                    // Dictionary to store the pairs of adjacent tiles of POSSIBLE different regions
+                    Dictionary<GameObject, GameObject> adjacentPairs = new Dictionary<GameObject, GameObject>();
 
-                    List<GameObject> adjacentTiles = new List<GameObject>();
+                    GameObject lookAheadUp = BoardManager.move(board, currentTile, Direction.UP, 1);
+                    GameObject lookAheadDown = BoardManager.move(board, currentTile, Direction.DOWN, 1);
+                    GameObject lookAheadLeft = BoardManager.move(board, currentTile, Direction.LEFT, 1);
+                    GameObject lookAheadRight = BoardManager.move(board, currentTile, Direction.RIGHT, 1);
 
-                    // Generates a list of non-empty adjacent tile objects
-                    foreach (BoardManager.Direction dir in Enum.GetValues(typeof(BoardManager.Direction)))
+                    // A tile pair is only valid if both are not null AND both are not empty
+                    if ((lookAheadUp != null && !(isEmpty(lookAheadUp))) && (lookAheadDown != null && !(isEmpty(lookAheadDown))))
                     {
-                        GameObject lookAhead = BoardManager.move(board, currentTile, dir, 1);
-
-                        // Null checker since move function returns null when out of bounds
-                        if (lookAhead == null)
-                        {
-                            continue;
-                        }
-
-                        if (!(isEmpty(lookAhead)))
-                        {
-                            adjacentTiles.Add(lookAhead);
-                        }
-
+                        adjacentPairs.Add(lookAheadUp, lookAheadDown);
                     }
 
-                    foreach (GameObject firstTile in adjacentTiles)
+                    if ((lookAheadLeft != null && !(isEmpty(lookAheadLeft))) && (lookAheadRight != null && !(isEmpty(lookAheadRight))))
                     {
-                        foreach (GameObject secondTile in adjacentTiles)
+                        adjacentPairs.Add(lookAheadLeft, lookAheadRight);
+                    }
+
+                    // Iterate over the adjacent pairs
+                    foreach (KeyValuePair<GameObject, GameObject> pair in adjacentPairs)
+                    {   
+
+                        GameObject firstTile = pair.Key;
+                        GameObject secondTile = pair.Value;
+
+                        TileScript firstTileScript = firstTile.GetComponent<TileScript>();
+                        TileScript secondTileScript = secondTile.GetComponent<TileScript>();
+
+                        Region firstRegion = firstTileScript.getRegion();
+                        Region secondRegion = secondTileScript.getRegion();
+
+                        // If the tiles regions are NOT the same, the middle tile is a connector between them
+                        if (firstRegion.getID() != secondRegion.getID())
                         {
-                            if (connectorMade)
+                            Direction dir = Direction.UP;
+
+                            int[] firstPos = firstTileScript.arrayPos;
+                            int[] secondPos = secondTileScript.arrayPos;
+
+                            // [0] represents x dim and [1] y
+                            int[] delta = new int[2];
+
+                            delta[0] = secondPos[0] - firstPos[0];
+                            delta[1] = secondPos[1] - firstPos[1];
+
+                            // Evaluate the direction of the connector using the position in the board array
+                            if (delta[0] < 0)
                             {
-                                break;
+                                dir = Direction.LEFT;
+
+                            }
+                            else if (delta[0] > 0)
+                            {
+                                dir = Direction.RIGHT;
+
+                            }
+                            else if (delta[1] < 0)
+                            {
+                                dir = Direction.DOWN;
+
+                            }
+                            else if (delta[1] > 0)
+                            {
+                                dir = Direction.UP;
                             }
 
-                            TileScript firstTileScript = firstTile.GetComponent<TileScript>();
-                            TileScript secondTileScript = secondTile.GetComponent<TileScript>();
+                            // Now that direction is calculated, call connector method and then merge the two regions together
+                            addConnector(firstTile, currentTile, secondTile, Connector.DOOR, dir);
+                            regionManager.mergeRegions(firstRegion, secondRegion);
 
-                            Region firstRegion = firstTileScript.getRegion();
-                            Region secondRegion = secondTileScript.getRegion();
-
-                            if (firstRegion.getID() != secondRegion.getID())
-                            {
-                                Direction dir = Direction.UP;
-
-                                int[] firstPos = firstTileScript.arrayPos;
-                                int[] secondPos = secondTileScript.arrayPos;
-
-                                int[] delta = new int[2];
-
-                                delta[0] = secondPos[0] - firstPos[0];
-                                delta[1] = secondPos[1] - firstPos[1];
-
-                                if (delta[0] == -1)
-                                {
-                                    dir = Direction.LEFT;
-                                } else if (delta[0] == 1)
-                                {
-                                    dir = Direction.RIGHT;
-                                } else if (delta[1] == -1)
-                                {
-                                    dir = Direction.DOWN;
-                                } else if (delta[1] == 1)
-                                {
-                                    dir = Direction.UP;
-                                }
-
-                                addConnector(firstTile, currentTile, secondTile, Connector.DOOR, dir);
-                                regionManager.mergeRegions(firstRegion, secondRegion);
-
-                                connectors++;
-
-                                // A tile is ONE connector at most, so if connector is found skip ahead to next tile in the loop
-                                connectorMade = true;
-                            }
+                            // Tiles cannot be multiple connectors, so if one is found clear the other possible connectors
+                            adjacentPairs.Clear();
                         }
 
                     }
@@ -320,23 +332,47 @@ public class BoardManager : MonoBehaviour {
 
             GameObject secondTileReplacement = BoardManager.replaceTile(secondTile, tiles[3], this.board);
 
+            // Ensures the newly created connecting tile and portal tiles have the same region.
+            Region survivingRegion = secondTileReplacement.GetComponent<TileScript>().getRegion();
+            firstTileReplacement.GetComponent<TileScript>().setRegion(survivingRegion);
+            connectingTileScript.setRegion(survivingRegion);
+
             if (dir == Direction.UP)
+            {
+                firstTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[4];
+                secondTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[0];
+
+                // DEBUG CODE REMOVE LATER
+                firstTileReplacement.GetComponent<TileScript>().debug = "UP DIR";
+                secondTileReplacement.GetComponent<TileScript>().debug = "UP DIR";
+
+            } else if (dir == Direction.DOWN)
             {
                 firstTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[0];
                 secondTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[4];
 
-            } else if (dir == Direction.DOWN)
-            {
-                firstTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[4];
-                secondTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[0];
+                // DEBUG CODE REMOVE LATER
+                firstTileReplacement.GetComponent<TileScript>().debug = "DOWN DIR";
+                secondTileReplacement.GetComponent<TileScript>().debug = "DOWN DIR";
+
             } else if (dir == Direction.LEFT)
-            {
-                firstTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[3];
-                secondTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[2];
-            } else if (dir == Direction.RIGHT)
             {
                 firstTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[2];
                 secondTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[3];
+
+                // DEBUG CODE REMOVE LATER
+                firstTileReplacement.GetComponent<TileScript>().debug = "LEFT DIR";
+                secondTileReplacement.GetComponent<TileScript>().debug = "LEFT DIR";
+
+            } else if (dir == Direction.RIGHT)
+            {
+                firstTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[3];
+                secondTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[2];
+
+                // DEBUG CODE REMOVE LATER
+                firstTileReplacement.GetComponent<TileScript>().debug = "RIGHT DIR";
+                secondTileReplacement.GetComponent<TileScript>().debug = "RIGHT DIR";
+
             }
         }
     }
@@ -472,8 +508,5 @@ public class BoardManager : MonoBehaviour {
         return false;
     }
 
-    // Update is called once per frame
-    void Update () {
-		
-	}
+
 }

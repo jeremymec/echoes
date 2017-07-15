@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+[System.Serializable]
 public class Region {
 
     public static int count = 0;
 
-    private int id;
+    public int id; // IS PUBLIC FOR DEBUGGING
 
     public Region()
     {

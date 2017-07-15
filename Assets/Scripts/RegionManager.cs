@@ -12,6 +12,7 @@ public class RegionManager {
         regions = new List<Region>();
     }
 
+    // Merge makes the SECOND region object obtain the ID of the first, and then removes the duplicate first region object from the list of regions
     public void mergeRegions(Region first, Region second)
     {
         second.setID(first);
