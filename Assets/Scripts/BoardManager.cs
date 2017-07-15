@@ -27,7 +27,7 @@ public class BoardManager : MonoBehaviour {
     public RegionManager regionManager;
 
     // Width of emptyFloorTile border around rooms
-    public int roomPadding = 2;
+    public int roomPadding = 3;
 
 	public void setupScene (int width, int height) {
         // Debug.Log("Time at beginning of setupScene, " + GameManager.watch.ElapsedMilliseconds);
@@ -92,15 +92,15 @@ public class BoardManager : MonoBehaviour {
             sizeX = processNumber(false, sizeX);
             sizeY = processNumber(false, sizeY);
 
-            int startX = UnityEngine.Random.Range(0, board.GetLength(0) - (sizeX + 2));
-            int startY = UnityEngine.Random.Range(0, board.GetLength(1) - (sizeY + 2));
+            int startX = UnityEngine.Random.Range(0, board.GetLength(0) - (sizeX + 1));
+            int startY = UnityEngine.Random.Range(0, board.GetLength(1) - (sizeY + 1));
             startX = processNumber(false, startX);
             startY = processNumber(false, startY);
 
             int[] bottomLeft = { startX, startY };
 
             // Debug.Log("MAKING ROOM, ATTEMPT #" + i + "WITH BOTTOMLEFT X: " + startX + " Y: " + startY);
-            createRoom(bottomLeft, sizeX, sizeY);
+            createRoom(bottomLeft, --sizeX, --sizeY);
         }
     }
 
@@ -172,7 +172,7 @@ public class BoardManager : MonoBehaviour {
                 GameObject tile;
 
                 // If the current tile is in the padding, create a emptyFloorTile instead of a normal tile
-                if ((y < bottomLeft[1] || y > sizeY + bottomLeft[1]) && (x < bottomLeft[0] || x > sizeX + bottomLeft[0]))
+                if ((y < bottomLeft[1] || y > sizeY + bottomLeft[1]) || (x < bottomLeft[0] || x > sizeX + bottomLeft[0]))
                 {
                     tile = replaceTile(oldTile, tiles[5], this.board);
 

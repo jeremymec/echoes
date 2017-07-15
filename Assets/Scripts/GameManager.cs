@@ -16,7 +16,7 @@ public class GameManager : MonoBehaviour {
 
         // Gets the Gameobject BoardManager, and calls the start method on the BoardScript associated with that Object.
         boardScript = GetComponent<BoardManager>();
-        boardScript.setupScene(30, 30);
+        boardScript.setupScene(40, 40);
     }
 	
 	// Update is called once per frame
