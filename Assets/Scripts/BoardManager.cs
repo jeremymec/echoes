@@ -6,10 +6,10 @@ using UnityEngine;
 public class BoardManager : MonoBehaviour {
 
     // Enums for Direction
-    public enum Direction { UP, DOWN, LEFT, RIGHT }
+    public enum Direction { UP, DOWN, LEFT, RIGHT, NULL }
 
     // Enums for type of connection between rooms
-    public enum Connector { DOOR }
+    public enum Connector { DOOR, MAZE }
 
     // Array of different types of Tile PREFABS that can be used to create new tiles
     public GameObject[] tiles;
@@ -34,7 +34,7 @@ public class BoardManager : MonoBehaviour {
 
         createBoard(width, height);
 
-        placeRooms(6);
+        placeRooms(500);
 
         setupMaze();
 
@@ -46,7 +46,8 @@ public class BoardManager : MonoBehaviour {
     {
         if (Input.GetKeyUp(KeyCode.Space))
         {
-            connectRegions();
+            // connectRegions();
+            findConnectors();
         }
     }
 
@@ -162,9 +163,9 @@ public class BoardManager : MonoBehaviour {
         Region roomRegion = regionManager.addRegion();
         room.setRegion(roomRegion);
 
-        for (int y = bottomLeft[1] - roomPadding; y < sizeY + bottomLeft[1] + roomPadding; y++)
+        for (int y = bottomLeft[1] - roomPadding; y < sizeY + bottomLeft[1] + roomPadding + 1; y++)
         {
-            for (int x = bottomLeft[0] - roomPadding; x < sizeX + bottomLeft[0] + roomPadding; x++)
+            for (int x = bottomLeft[0] - roomPadding; x < sizeX + bottomLeft[0] + roomPadding + 1; x++)
             {
                 GameObject oldTile = this.board[x, y];
                 int[] targetPos = oldTile.GetComponent<TileScript>().arrayPos;
@@ -222,119 +223,131 @@ public class BoardManager : MonoBehaviour {
         }
     }
 
-    void connectRegions()
-    {
-        while (regionManager.regions.Count > 1)
-        {
-            if (findConnectors() == 0)
-            {
-                break;
-            }
-           
-        }
-    }
 
-    int findConnectors()
+    void findConnectors()
     {
-        int connectors = 0;
-
+        // Iterate through the board to identity possible connectors
         for (int y = 0; y < board.GetLength(1); y++)
         {
             for (int x = 0; x < board.GetLength(0); x++)
             {
+                // Check if current tile is a connector
                 GameObject currentTile = board[x, y];
                 TileScript currentTileScript = currentTile.GetComponent<TileScript>();
 
-
-                // Only empty cells can be valid connectors
+                // Only empty tiles can be connectors
                 if (isEmpty(currentTile))
                 {
-                    // Dictionary to store the pairs of adjacent tiles of POSSIBLE different regions
-                    Dictionary<GameObject, GameObject> adjacentPairs = new Dictionary<GameObject, GameObject>();
+                    // Store pairs of adjacent tiles; both up and down, left and right
+                    List <GameObject[]> pairs = new List<GameObject[]>();
 
+                    // Gets all adjacent tiles (ignoring diagonals)
                     GameObject lookAheadUp = BoardManager.move(board, currentTile, Direction.UP, 1);
                     GameObject lookAheadDown = BoardManager.move(board, currentTile, Direction.DOWN, 1);
                     GameObject lookAheadLeft = BoardManager.move(board, currentTile, Direction.LEFT, 1);
                     GameObject lookAheadRight = BoardManager.move(board, currentTile, Direction.RIGHT, 1);
 
-                    // A tile pair is only valid if both are not null AND both are not empty AND neither are a portal
-                    if ((lookAheadUp != null && !(isEmpty(lookAheadUp)) && !(isPortal(lookAheadUp)) && (lookAheadDown != null && !(isEmpty(lookAheadDown))) && !(isPortal(lookAheadDown))))
+                    // Checks the following conditions for BOTH the up and down tile - NOT null, NOT empty, and NOT already a portal. If these are met, add to pairs
+                    if (isFloor(lookAheadUp) && isFloor(lookAheadDown))
                     {
-                        adjacentPairs.Add(lookAheadUp, lookAheadDown);
-                    }
+                        checkConnectorRegion(lookAheadUp, currentTile, lookAheadDown);
 
-                    if ((lookAheadLeft != null && !(isEmpty(lookAheadLeft))) && (lookAheadRight != null && !(isEmpty(lookAheadRight))))
+                    } else if (isFloor(lookAheadLeft) && isFloor(lookAheadRight))
                     {
-                        adjacentPairs.Add(lookAheadLeft, lookAheadRight);
+                        checkConnectorRegion(lookAheadLeft, currentTile, lookAheadRight);
                     }
-
-                    // Iterate over the adjacent pairs
-                    foreach (KeyValuePair<GameObject, GameObject> pair in adjacentPairs)
-                    {   
-
-                        GameObject firstTile = pair.Key;
-                        GameObject secondTile = pair.Value;
-
-                        TileScript firstTileScript = firstTile.GetComponent<TileScript>();
-                        TileScript secondTileScript = secondTile.GetComponent<TileScript>();
-
-                        Region firstRegion = firstTileScript.getRegion();
-                        Region secondRegion = secondTileScript.getRegion();
-
-                        // If the tiles regions are NOT the same, the middle tile is a connector between them
-                        if (firstRegion.getID() != secondRegion.getID())
-                        {
-                            Direction dir = Direction.UP;
-
-                            int[] firstPos = firstTileScript.arrayPos;
-                            int[] secondPos = secondTileScript.arrayPos;
-
-                            // [0] represents x dim and [1] y
-                            int[] delta = new int[2];
-
-                            delta[0] = secondPos[0] - firstPos[0];
-                            delta[1] = secondPos[1] - firstPos[1];
-
-                            // Evaluate the direction of the connector using the position in the board array
-                            if (delta[0] < 0)
-                            {
-                                dir = Direction.LEFT;
-
-                            }
-                            else if (delta[0] > 0)
-                            {
-                                dir = Direction.RIGHT;
-
-                            }
-                            else if (delta[1] < 0)
-                            {
-                                dir = Direction.DOWN;
-
-                            }
-                            else if (delta[1] > 0)
-                            {
-                                dir = Direction.UP;
-                            }
-
-                            // Now that direction is calculated, call connector method and then merge the two regions together
-                            addConnector(firstTile, currentTile, secondTile, Connector.DOOR, dir);
-                            regionManager.mergeRegions(firstRegion, secondRegion);
-
-                            // Tiles cannot be multiple connectors, so if one is found clear the other possible connectors and break the loop because C# is a special princess
-                            adjacentPairs.Clear();
-                            break;
-                        }
-
-                    }
-
-
 
                 }
             }
         }
-
-        return connectors;
     }
+
+    void checkConnectorRegion(GameObject firstTile, GameObject middleTile, GameObject lastTile)
+    {
+        if (!(RegionManager.compareRegion(firstTile, lastTile)))
+        {
+            createConnector(firstTile, middleTile, lastTile);
+        }
+    }
+
+    void createConnector(GameObject firstTile, GameObject middleTile, GameObject lastTile)
+    {
+        GameObject roomTile = firstTile;
+        GameObject outsideTile = lastTile;
+
+        // Different types of connectors
+        if (firstTile.CompareTag("roomPadding") ^ lastTile.CompareTag("roomPadding"))
+        {
+            // Sets the insideTile to the tile which has room padding
+            if (firstTile.CompareTag("roomPadding"))
+            {
+                roomTile = firstTile;
+                outsideTile = lastTile;
+
+            }
+            else
+            {
+                roomTile = lastTile;
+                outsideTile = firstTile;
+            }
+
+            Direction direction = getDirection(outsideTile, roomTile);
+
+            // If connecting a corridor to a room, ensure not just padding
+            GameObject lookInside = move(this.board, roomTile, direction, (roomPadding));
+
+            // If the probe finds a room, connector can be added
+            if (lookInside.GetComponent<TileScript>().CompareTag("floorTile"))
+            {
+                Region finalRegion = roomTile.GetComponent<TileScript>().getRegion();
+
+                addConnector(outsideTile, middleTile, lookInside, Connector.DOOR, direction);
+
+                floodFillRegion(middleTile, finalRegion);
+            }
+
+        }
+        // Connector is a coridoor if NEITHER are room padding
+        else if (!(firstTile.CompareTag("roomPadding") || lastTile.CompareTag("roomPadding")))
+        {
+            Debug.Log("Coridoor Connector Found");
+        }
+
+    }
+
+    // Gets direction FROM first TO second. I.e. From tile [2, 2] to [1, 2] returns LEFT
+    static Direction getDirection(GameObject first, GameObject second)
+    {
+        int[] firstPos = first.GetComponent<TileScript>().arrayPos;
+        int[] secondPos = second.GetComponent<TileScript>().arrayPos;
+
+        int delta = secondPos[0] - firstPos[0];
+
+        if (delta > 0)
+        {
+            return Direction.RIGHT;
+
+        } else if (delta < 0)
+        {
+            return Direction.LEFT;
+
+        } else
+        {
+            delta = secondPos[1] - firstPos[1];
+            if (delta > 0)
+            {
+                return Direction.UP;
+
+            } else if (delta < 0)
+            {
+                return Direction.DOWN;
+
+            }
+        }
+
+        return Direction.NULL;
+    }
+
 
     // Returns if a given tile has a portal script attached to it, and is thus a portal
     bool isPortal(GameObject tile)
@@ -346,60 +359,135 @@ public class BoardManager : MonoBehaviour {
 
         return true;
     }
-    
-    void addConnector(GameObject firstTile, GameObject connectingTile, GameObject secondTile, Connector type, Direction dir)
+
+    // NOTE: THIS WILL RETURN FALSE IF TILE A PORTAL
+    bool isFloor(GameObject tile)
     {
+        if (tile == null)
+        {
+            return false;
+        }
+
+        if (isPortal(tile))
+        {
+            return false;
+        }
+
+        if (tile.CompareTag("floorTile") || tile.CompareTag("roomPadding"))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    void addConnector(GameObject firstTile, GameObject middleTile, GameObject lastTile, Connector type, Direction dir)
+    {
+        // Create the first tile (floor tile)
+        GameObject firstTileReplacement = BoardManager.replaceTile(firstTile, tiles[4], this.board);
+
+        // Replace middle tile
+        GameObject replacementConnectingTile = BoardManager.replaceTile(middleTile, tiles[4], this.board);
+
+        // Replace last tile with portal tile
+        GameObject lastTileReplacement = BoardManager.replaceTile(lastTile, tiles[3], this.board);
+
+        // If door to a room, need to go through room padding
         if (type == Connector.DOOR)
         {
-            GameObject firstTileReplacement = BoardManager.replaceTile(firstTile, tiles[3], this.board);
+            // Create list to store the connecting tiles between the portals
+            List<GameObject> connectingTileReplacements = new List<GameObject>();
 
-            GameObject connectingTileReplacement = BoardManager.replaceTile(connectingTile, tiles[4], this.board);
-            TileScript connectingTileScript = connectingTileReplacement.GetComponent<TileScript>();
-            connectingTileScript.clone(secondTile.GetComponent<TileScript>());
-
-            GameObject secondTileReplacement = BoardManager.replaceTile(secondTile, tiles[3], this.board);
-
-            // Ensures the newly created connecting tile and portal tiles have the same region.
-            Region survivingRegion = secondTileReplacement.GetComponent<TileScript>().getRegion();
-            firstTileReplacement.GetComponent<TileScript>().setRegion(survivingRegion);
-            connectingTileScript.setRegion(survivingRegion);
-
-            if (dir == Direction.UP)
+            // Create remaining connecting tiles
+            for (int i = 1; i < roomPadding; i++)
             {
-                firstTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[4];
-                secondTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[0];
+                GameObject oldConnectingTile = BoardManager.move(this.board, middleTile, dir, i);
+                connectingTileReplacements.Add(BoardManager.replaceTile(oldConnectingTile, tiles[4], this.board));
+            }
+        }
 
-                // DEBUG CODE REMOVE LATER
-                firstTileReplacement.GetComponent<TileScript>().debug = "UP DIR";
-                secondTileReplacement.GetComponent<TileScript>().debug = "UP DIR";
+        if (dir == Direction.UP)
+        {
+            lastTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[0];
+            GameObject previous = move(this.board, lastTileReplacement, Direction.DOWN, 1);
+            previous.GetComponent<SpriteRenderer>().sprite = portalSprites[8];
 
-            } else if (dir == Direction.DOWN)
+            // DEBUG CODE REMOVE LATER
+            firstTileReplacement.GetComponent<TileScript>().debug = "UP DIR";
+            lastTileReplacement.GetComponent<TileScript>().debug = "UP DIR";
+
+        }
+        else if (dir == Direction.DOWN)
+        {
+            lastTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[3];
+            GameObject previous = move(this.board, lastTileReplacement, Direction.UP, 1);
+            previous.GetComponent<SpriteRenderer>().sprite = portalSprites[4];
+
+            // DEBUG CODE REMOVE LATER
+            firstTileReplacement.GetComponent<TileScript>().debug = "DOWN DIR";
+            lastTileReplacement.GetComponent<TileScript>().debug = "DOWN DIR";
+
+        }
+        else if (dir == Direction.LEFT)
+        {
+            lastTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[2];
+            GameObject previous = move(this.board, lastTileReplacement, Direction.RIGHT, 1);
+            previous.GetComponent<SpriteRenderer>().sprite = portalSprites[5];
+
+            // DEBUG CODE REMOVE LATER
+            firstTileReplacement.GetComponent<TileScript>().debug = "LEFT DIR";
+            lastTileReplacement.GetComponent<TileScript>().debug = "LEFT DIR";
+
+        }
+        else if (dir == Direction.RIGHT)
+        {
+            lastTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[1];
+            GameObject previous = move(this.board, lastTileReplacement, Direction.LEFT, 1);
+            previous.GetComponent<SpriteRenderer>().sprite = portalSprites[7];
+
+            // DEBUG CODE REMOVE LATER
+            firstTileReplacement.GetComponent<TileScript>().debug = "RIGHT DIR";
+            lastTileReplacement.GetComponent<TileScript>().debug = "RIGHT DIR";
+
+        }
+    }
+
+    public void floodFillRegion(GameObject startTile, Region region)
+    {
+        TileScript ts = startTile.GetComponent<TileScript>();
+        ts.setRegion(region);
+
+        GameObject lookAheadUp = BoardManager.move(board, startTile, Direction.UP, 1);
+        GameObject lookAheadDown = BoardManager.move(board, startTile, Direction.DOWN, 1);
+        GameObject lookAheadLeft = BoardManager.move(board, startTile, Direction.LEFT, 1);
+        GameObject lookAheadRight = BoardManager.move(board, startTile, Direction.RIGHT, 1);
+
+        if ((lookAheadUp != null))
+        {
+            if (!(isEmpty(lookAheadUp)) && !(RegionManager.compareRegion(startTile, lookAheadUp)))
             {
-                firstTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[0];
-                secondTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[4];
-
-                // DEBUG CODE REMOVE LATER
-                firstTileReplacement.GetComponent<TileScript>().debug = "DOWN DIR";
-                secondTileReplacement.GetComponent<TileScript>().debug = "DOWN DIR";
-
-            } else if (dir == Direction.LEFT)
+                floodFillRegion(lookAheadUp, region);
+            }
+        }
+        if ((lookAheadDown != null))
+        {
+            if (!(isEmpty(lookAheadDown)) && !(RegionManager.compareRegion(startTile, lookAheadDown)))
             {
-                firstTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[2];
-                secondTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[3];
-
-                // DEBUG CODE REMOVE LATER
-                firstTileReplacement.GetComponent<TileScript>().debug = "LEFT DIR";
-                secondTileReplacement.GetComponent<TileScript>().debug = "LEFT DIR";
-
-            } else if (dir == Direction.RIGHT)
+                floodFillRegion(lookAheadDown, region);
+            }
+        }
+        if ((lookAheadLeft != null))
+        {
+            if (!(isEmpty(lookAheadLeft)) && !(RegionManager.compareRegion(startTile, lookAheadLeft)))
             {
-                firstTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[3];
-                secondTileReplacement.GetComponent<SpriteRenderer>().sprite = portalSprites[2];
-
-                // DEBUG CODE REMOVE LATER
-                firstTileReplacement.GetComponent<TileScript>().debug = "RIGHT DIR";
-                secondTileReplacement.GetComponent<TileScript>().debug = "RIGHT DIR";
-
+                floodFillRegion(lookAheadLeft, region);
+            }
+        }
+        if ((lookAheadRight != null))
+        {
+            if (!(isEmpty(lookAheadRight)) && !(RegionManager.compareRegion(startTile, lookAheadRight)))
+            {
+                floodFillRegion(lookAheadRight, region);
             }
         }
     }
@@ -508,7 +596,28 @@ public class BoardManager : MonoBehaviour {
         return tile;
     }
 
-        /// <summary>
+    public static GameObject replaceTile(GameObject original, GameObject prefab, GameObject[,] board, Region region)
+    {
+        TileScript tsOld = original.GetComponent<TileScript>();
+        int[] targetPos = tsOld.arrayPos;
+
+        GameObject tile;
+
+        tile = Instantiate(prefab, new Vector3(targetPos[0], targetPos[1], 0), Quaternion.identity) as GameObject;
+
+        TileScript ts = tile.GetComponent<TileScript>();
+        ts.clone(tsOld);
+        ts.setType(TileScript.Type.PASSAGE);
+        ts.setRegion(region);
+
+        board[targetPos[0], targetPos[1]] = tile;
+
+        GameObject.Destroy(original);
+
+        return tile;
+    }
+
+    /// <summary>
     /// Checks if a given cell is an empty tile
     /// </summary>
     /// <returns>True if empty, false if any other type</returns>

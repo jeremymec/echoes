@@ -7,23 +7,37 @@ public class RegionManager {
 
     public List<Region> regions;
 
+    int region_count = 0;
+
     public RegionManager()
     {
         regions = new List<Region>();
     }
 
-    // Merge makes the SECOND region object obtain the ID of the first, and then removes the duplicate first region object from the list of regions
-    public void mergeRegions(Region first, Region second)
-    {
-        second.setID(first);
-        regions.Remove(first);
-    }
-
     public Region addRegion()
     {
         Region r = new Region();
+
+        r.setID(++region_count);
+
         this.regions.Add(r);
         return r;
+    }
+
+    public static bool compareRegion(GameObject firstTile, GameObject secondTile)
+    {
+        Region r1 = firstTile.GetComponent<TileScript>().getRegion();
+        Region r2 = secondTile.GetComponent<TileScript>().getRegion();
+
+        if (r1.getID() == r2.getID())
+        {
+            return true;
+
+        }
+        else
+        {
+            return false;
+        }
     }
 
 
