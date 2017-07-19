@@ -8,8 +8,11 @@ public class Region {
 
     public int id; // IS PUBLIC FOR DEBUGGING
 
+    public List<GameObject> tiles;
+
     public Region()
     {
+        this.tiles = new List<GameObject>();
     }
 	
     public int getID()
@@ -22,19 +25,10 @@ public class Region {
         this.id = id;
     }
     
-    public static bool compareRegion(GameObject firstTile, GameObject secondTile)
+    public List<GameObject> getTiles()
     {
-        Region r1 = firstTile.GetComponent<TileScript>().getRegion();
-        Region r2 = secondTile.GetComponent<TileScript>().getRegion();
-
-        if (r1.getID() == r2.getID())
-        {
-            return true;
-
-        } else
-        {
-            return false;
-        }
+        return this.tiles;
     }
+
 
 }

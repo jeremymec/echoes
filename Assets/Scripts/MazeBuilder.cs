@@ -48,11 +48,6 @@ public class MazeBuilder : ScriptableObject {
     /// <param name="stack">The stack, which is needed to step back through maze</param>
     void check(GameObject current, Stack<GameObject> stack)
     {
-
-        TileScript ts = current.GetComponent<TileScript>();
-
-        // Debug.Log("Now checking Tile of type " + current.tag + "with position in array X: " + ts.arrayPos[0] + " Y: " + ts.arrayPos[1]);
-
         // Check if maze can be continued in EACH direction
         foreach (BoardManager.Direction dir in getRandomDirections())
         {
@@ -69,15 +64,15 @@ public class MazeBuilder : ScriptableObject {
                 stack.Push(current);
 
                 GameObject nextTile = BoardManager.move(this.board, current, dir, 1);
-                GameObject replacementTile = BoardManager.replaceTile(nextTile, tiles[1], this.board);
+                GameObject replacementTile = BoardManager.replaceTile(nextTile, tiles[1], this.board, region);
                 TileScript replacementTileScript = replacementTile.GetComponent<TileScript>();
-                replacementTileScript.setRegion(this.region);
+                // replacementTileScript.setRegion(this.region);
                 replacementTileScript.setType(TileScript.Type.MAZE);
 
                 GameObject targetTile = BoardManager.move(this.board, current, dir, 2);
-                GameObject replacementTarget = BoardManager.replaceTile(targetTile, tiles[1], this.board);
+                GameObject replacementTarget = BoardManager.replaceTile(targetTile, tiles[1], this.board, region);
                 TileScript replacementTargetScript = replacementTarget.GetComponent<TileScript>();
-                replacementTargetScript.setRegion(this.region);
+                // replacementTargetScript.setRegion(this.region);
                 replacementTargetScript.setType(TileScript.Type.MAZE);
 
                 check(targetTile, stack);

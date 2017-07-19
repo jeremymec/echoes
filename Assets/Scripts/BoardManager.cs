@@ -11,6 +11,12 @@ public class BoardManager : MonoBehaviour {
     // Enums for type of connection between rooms
     public enum Connector { DOOR, MAZE }
 
+    // STATIC PARAMETERS
+    public int boardWidth = 1000;
+    public int boardHeight = 1000;
+    public int roomFrequency = 700;
+    public int roomPadding = 2;
+
     // Array of different types of Tile PREFABS that can be used to create new tiles
     public GameObject[] tiles;
     
@@ -26,28 +32,26 @@ public class BoardManager : MonoBehaviour {
     // Region Manager
     public RegionManager regionManager;
 
-    // Width of emptyFloorTile border around rooms
-    public int roomPadding = 3;
+    public int debug1;
+    public int debug2;
 
-	public void setupScene (int width, int height) {
-        // Debug.Log("Time at beginning of setupScene, " + GameManager.watch.ElapsedMilliseconds);
+	public void setupScene () {
 
-        createBoard(width, height);
+        createBoard();
 
-        placeRooms(500);
+        placeRooms(roomFrequency);
 
         setupMaze();
 
-        // connectRegions();
+        // findConnectors();
     }
 
-    // CURRENT BEING USED TO DEBUG
     void Update()
     {
-        if (Input.GetKeyUp(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.Space))
         {
-            // connectRegions();
-            findConnectors();
+            // findConnectors();
+            floodFillRegion(board[debug1, debug2], regionManager.addRegion());
         }
     }
 
@@ -56,18 +60,18 @@ public class BoardManager : MonoBehaviour {
     /// </summary>
     /// <param name="width">Width of Board</param>
     /// <param name="height">Height of Board</param>
-    void createBoard(int width, int height)
+    void createBoard()
     {
         // Initializes Region manager to be used later in board creation process
         this.regionManager = new RegionManager();
 
         // Initializes array with GameObjects, that will be filled with Tiles
-        board = new GameObject[width, height];
+        board = new GameObject[boardWidth + 1, boardHeight + 1];
 
-        for (int y = 0; y < height; y++)
+        for (int y = 0; y < boardHeight + 1; y++)
         {
 
-            for (int x = 0; x < height; x++)
+            for (int x = 0; x < boardWidth + 1; x++)
             {
                 // Instantiates tile of the specified type (empty tile) with coords determined by the for loop, and 0 rotiation.  
                 GameObject tile = Instantiate(tiles[0], new Vector3(x, y, 0), Quaternion.identity) as GameObject;
@@ -93,14 +97,13 @@ public class BoardManager : MonoBehaviour {
             sizeX = processNumber(false, sizeX);
             sizeY = processNumber(false, sizeY);
 
-            int startX = UnityEngine.Random.Range(0, board.GetLength(0) - (sizeX + 1));
-            int startY = UnityEngine.Random.Range(0, board.GetLength(1) - (sizeY + 1));
+            int startX = UnityEngine.Random.Range(0, boardWidth - (sizeX + 1));
+            int startY = UnityEngine.Random.Range(0, boardHeight - (sizeY + 1));
             startX = processNumber(false, startX);
             startY = processNumber(false, startY);
 
             int[] bottomLeft = { startX, startY };
 
-            // Debug.Log("MAKING ROOM, ATTEMPT #" + i + "WITH BOTTOMLEFT X: " + startX + " Y: " + startY);
             createRoom(bottomLeft, --sizeX, --sizeY);
         }
     }
@@ -148,7 +151,7 @@ public class BoardManager : MonoBehaviour {
                     {
                         return false;
                     }
-                } catch (System.IndexOutOfRangeException e)
+                } catch (System.IndexOutOfRangeException)
                 {
                     return false;
                 }
@@ -168,6 +171,7 @@ public class BoardManager : MonoBehaviour {
             for (int x = bottomLeft[0] - roomPadding; x < sizeX + bottomLeft[0] + roomPadding + 1; x++)
             {
                 GameObject oldTile = this.board[x, y];
+                
                 int[] targetPos = oldTile.GetComponent<TileScript>().arrayPos;
 
                 GameObject tile;
@@ -188,6 +192,9 @@ public class BoardManager : MonoBehaviour {
 
                 ts.setRoom(room);
                 ts.setRegion(roomRegion);
+
+                roomRegion.tiles.Add(tile);
+
                 ts.setType(TileScript.Type.ROOM);
 
                 this.board[targetPos[0], targetPos[1]] = tile;
@@ -205,10 +212,10 @@ public class BoardManager : MonoBehaviour {
 
     void setupMaze()
     {
-        for (int y = 0; y < board.GetLength(1); y++)
+        for (int y = 0; y < boardHeight; y++)
         {
 
-            for (int x = 0; x < board.GetLength(0); x++)
+            for (int x = 0; x < boardWidth; x++)
             {
                 if (checkEmptyBlock(board[x, y]))
                 {
@@ -233,14 +240,10 @@ public class BoardManager : MonoBehaviour {
             {
                 // Check if current tile is a connector
                 GameObject currentTile = board[x, y];
-                TileScript currentTileScript = currentTile.GetComponent<TileScript>();
 
                 // Only empty tiles can be connectors
                 if (isEmpty(currentTile))
                 {
-                    // Store pairs of adjacent tiles; both up and down, left and right
-                    List <GameObject[]> pairs = new List<GameObject[]>();
-
                     // Gets all adjacent tiles (ignoring diagonals)
                     GameObject lookAheadUp = BoardManager.move(board, currentTile, Direction.UP, 1);
                     GameObject lookAheadDown = BoardManager.move(board, currentTile, Direction.DOWN, 1);
@@ -303,6 +306,7 @@ public class BoardManager : MonoBehaviour {
 
                 addConnector(outsideTile, middleTile, lookInside, Connector.DOOR, direction);
 
+                Debug.Log("Flood Fill Region called at X: " + middleTile.GetComponent<TileScript>().arrayPos[0] + " Y: " + middleTile.GetComponent<TileScript>().arrayPos[1]);
                 floodFillRegion(middleTile, finalRegion);
             }
 
@@ -456,6 +460,7 @@ public class BoardManager : MonoBehaviour {
     {
         TileScript ts = startTile.GetComponent<TileScript>();
         ts.setRegion(region);
+        startTile.GetComponent<SpriteRenderer>().sprite = portalSprites[10];
 
         GameObject lookAheadUp = BoardManager.move(board, startTile, Direction.UP, 1);
         GameObject lookAheadDown = BoardManager.move(board, startTile, Direction.DOWN, 1);
@@ -568,7 +573,7 @@ public class BoardManager : MonoBehaviour {
             int[] pos = (cell.GetComponent("TileScript") as TileScript).arrayPos;
             target = board[pos[0] + deltaX, (pos[1] + deltaY)];
         }
-        catch (IndexOutOfRangeException e)
+        catch (IndexOutOfRangeException)
         {
             return null;
         }
@@ -591,6 +596,10 @@ public class BoardManager : MonoBehaviour {
 
         board[targetPos[0], targetPos[1]] = tile;
 
+        Region region = tsOld.getRegion();
+        region.tiles.Remove(original);
+        region.tiles.Add(tile);
+
         GameObject.Destroy(original);
 
         return tile;
@@ -610,6 +619,9 @@ public class BoardManager : MonoBehaviour {
         ts.setType(TileScript.Type.PASSAGE);
         ts.setRegion(region);
 
+        region.tiles.Remove(original);
+        region.tiles.Add(tile);
+
         board[targetPos[0], targetPos[1]] = tile;
 
         GameObject.Destroy(original);
@@ -627,13 +639,6 @@ public class BoardManager : MonoBehaviour {
         {
             return false;
         }
-
-        /*
-        if (cell.GetComponent<TileScript>().getRoom() != null)
-        {
-            return false;
-        }
-        */
 
         // Checks by tag comparison (THERE MIGHT BE A BETTER WAY TO DO THIS)
         if (cell.CompareTag("emptyTile"))
