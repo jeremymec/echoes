@@ -2,12 +2,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Room : ScriptableObject {
+// [System.Serializable]
+public class Room {
 
     public GameObject[,] board;
 
     int sizeX;
     int sizeY;
+
+    public static int count = 0;
+    public int id;
 
     int[] bottomLeft;
 
@@ -15,7 +19,7 @@ public class Room : ScriptableObject {
 
     public Room()
     {
-
+        this.id = ++count;
     }
 
     public void init(GameObject[,] board, int[] bottomLeft, int sizeX, int sizeY)
@@ -34,6 +38,23 @@ public class Room : ScriptableObject {
     public void setRegion(Region region)
     {
         this.region = region;
+    }
+
+    public override bool Equals(object obj)
+    {
+        Room room = obj as Room;
+
+        if (room == null)
+        {
+            return false;
+        }
+        
+        if (this.id == room.id)
+        {
+            return true;
+        }
+
+        return false;
     }
 
 }

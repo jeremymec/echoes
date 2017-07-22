@@ -8,7 +8,7 @@ public class TileScript : MonoBehaviour {
 
     Type type;
     public int[] arrayPos;
-    Room room;
+    public Room room;
     public Region region;
 
     // FOR DEBUGGING USE
@@ -16,7 +16,7 @@ public class TileScript : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-        this.room = null;
+        // this.room = null;
 	}
 
     public void clone(TileScript original)

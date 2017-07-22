@@ -14,7 +14,7 @@ public class BoardManager : MonoBehaviour {
     // STATIC PARAMETERS
     public int boardWidth = 1000;
     public int boardHeight = 1000;
-    public int roomFrequency = 700;
+    public int roomFrequency = 1;
     public int roomPadding = 2;
 
     // Array of different types of Tile PREFABS that can be used to create new tiles
@@ -39,19 +39,27 @@ public class BoardManager : MonoBehaviour {
 
         createBoard();
 
+        rooms = new List<Room>();
         placeRooms(roomFrequency);
 
         setupMaze();
 
-        // findConnectors();
+        findConnectors();
     }
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetMouseButtonDown(1))
         {
+            Vector3 pz = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+            int x = (int)pz.x;
+            int y = (int)pz.y;
+
             // findConnectors();
-            floodFillRegion(board[debug1, debug2], regionManager.addRegion());
+            Debug.Log(x);
+            Debug.Log(y);
+            floodFillRegion(board[x, y], regionManager.addRegion());
         }
     }
 
@@ -92,8 +100,8 @@ public class BoardManager : MonoBehaviour {
     {
         for (int i = 0; i < frequency; i++)
         {
-            int sizeX = UnityEngine.Random.Range(4, 9);
-            int sizeY = UnityEngine.Random.Range(4, 9);
+            int sizeX = UnityEngine.Random.Range(4, 9); // ROOM PARAMS CHANGE TO BE GLOBAL LATER PLS
+            int sizeY = UnityEngine.Random.Range(4, 9); // ROOM PARAMS CHANGE TO BE GLOBAL LATER PLS
             sizeX = processNumber(false, sizeX);
             sizeY = processNumber(false, sizeY);
 
@@ -147,7 +155,9 @@ public class BoardManager : MonoBehaviour {
                 // Debug.Log("About to access square at X: " + x + " Y: " + y);
                 try
                 {
-                    if (this.board[x, y].GetComponent<TileScript>().getRoom() != null)
+
+                    TileScript ts = this.board[x, y].GetComponent<TileScript>();
+                    if (ts.getRoom() != null)
                     {
                         return false;
                     }
@@ -159,12 +169,15 @@ public class BoardManager : MonoBehaviour {
             }
         }
 
-        Room room = ScriptableObject.CreateInstance<Room>();
+        Room room = new Room();
         room.init(this.board, bottomLeft, sizeX, sizeY);
 
         // Instructs the region manager to create a new region with the room type, and assigns it to the newly created room
         Region roomRegion = regionManager.addRegion();
         room.setRegion(roomRegion);
+
+        // Adds the newly created room to list of rooms
+        rooms.Add(room);
 
         for (int y = bottomLeft[1] - roomPadding; y < sizeY + bottomLeft[1] + roomPadding + 1; y++)
         {
@@ -202,10 +215,7 @@ public class BoardManager : MonoBehaviour {
                 GameObject.Destroy(oldTile);
             }
         }
-            
-        // Adds the newly created room to list of rooms
-        rooms.Add(room);
-
+           
         // Since a room was created, return true
         return true;
     }
@@ -250,7 +260,7 @@ public class BoardManager : MonoBehaviour {
                     GameObject lookAheadLeft = BoardManager.move(board, currentTile, Direction.LEFT, 1);
                     GameObject lookAheadRight = BoardManager.move(board, currentTile, Direction.RIGHT, 1);
 
-                    // Checks the following conditions for BOTH the up and down tile - NOT null, NOT empty, and NOT already a portal. If these are met, add to pairs
+                    // Checks the following conditions for BOTH the up and down tile - NOT null, NOT empty, and NOT already a portal. If these are met, connect
                     if (isFloor(lookAheadUp) && isFloor(lookAheadDown))
                     {
                         checkConnectorRegion(lookAheadUp, currentTile, lookAheadDown);
@@ -311,10 +321,11 @@ public class BoardManager : MonoBehaviour {
             }
 
         }
-        // Connector is a coridoor if NEITHER are room padding
-        else if (!(firstTile.CompareTag("roomPadding") || lastTile.CompareTag("roomPadding")))
+        // Connection between two rooms
+        else if (firstTile.CompareTag("floorTile") && lastTile.CompareTag("roomPadding"))
         {
-            Debug.Log("Coridoor Connector Found");
+            Direction direction = getDirection(outsideTile, roomTile);
+            GameObject lookInside = move(this.board, roomTile, direction, (roomPadding));
         }
 
     }
@@ -456,11 +467,34 @@ public class BoardManager : MonoBehaviour {
         }
     }
 
+    public static bool compareRoom(GameObject firstTile, GameObject secondTile)
+    {
+        // return true;
+
+        TileScript firstTs = firstTile.GetComponent<TileScript>();
+        TileScript secondTs = secondTile.GetComponent<TileScript>();
+
+        Room firstRoom = firstTs.getRoom();
+        Room secondRoom = secondTs.getRoom();
+
+        if (firstRoom == null && secondRoom == null)
+        {
+            return true;
+        }
+
+        if (firstRoom == null ^ secondRoom == null)
+        {
+            return false;
+        }
+
+        return (firstRoom.Equals(secondRoom));
+    }
+
     public void floodFillRegion(GameObject startTile, Region region)
     {
         TileScript ts = startTile.GetComponent<TileScript>();
         ts.setRegion(region);
-        startTile.GetComponent<SpriteRenderer>().sprite = portalSprites[10];
+        // startTile.GetComponent<SpriteRenderer>().sprite = portalSprites[10];
 
         GameObject lookAheadUp = BoardManager.move(board, startTile, Direction.UP, 1);
         GameObject lookAheadDown = BoardManager.move(board, startTile, Direction.DOWN, 1);
@@ -469,28 +503,28 @@ public class BoardManager : MonoBehaviour {
 
         if ((lookAheadUp != null))
         {
-            if (!(isEmpty(lookAheadUp)) && !(RegionManager.compareRegion(startTile, lookAheadUp)))
+            if (!(isEmpty(lookAheadUp)) && !(RegionManager.compareRegion(startTile, lookAheadUp)) && compareRoom(startTile, lookAheadUp))
             {
                 floodFillRegion(lookAheadUp, region);
             }
         }
         if ((lookAheadDown != null))
         {
-            if (!(isEmpty(lookAheadDown)) && !(RegionManager.compareRegion(startTile, lookAheadDown)))
+            if (!(isEmpty(lookAheadDown)) && !(RegionManager.compareRegion(startTile, lookAheadDown)) && compareRoom(startTile, lookAheadDown))
             {
                 floodFillRegion(lookAheadDown, region);
             }
         }
         if ((lookAheadLeft != null))
         {
-            if (!(isEmpty(lookAheadLeft)) && !(RegionManager.compareRegion(startTile, lookAheadLeft)))
+            if (!(isEmpty(lookAheadLeft)) && !(RegionManager.compareRegion(startTile, lookAheadLeft)) && compareRoom(startTile, lookAheadLeft))
             {
                 floodFillRegion(lookAheadLeft, region);
             }
         }
         if ((lookAheadRight != null))
         {
-            if (!(isEmpty(lookAheadRight)) && !(RegionManager.compareRegion(startTile, lookAheadRight)))
+            if (!(isEmpty(lookAheadRight)) && !(RegionManager.compareRegion(startTile, lookAheadRight)) && compareRoom(startTile, lookAheadRight))
             {
                 floodFillRegion(lookAheadRight, region);
             }
